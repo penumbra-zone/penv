@@ -22,6 +22,10 @@ pub enum ManageTopSubCmd {
     // Migrate(MigrateSubCmd),
 }
 
+// TODO: it would be extremely useful to create an environment that can run
+// against a local repository. This would probably work by symlinking out of the
+// `target/` directory of the repository.
+
 #[derive(Debug, Clone, clap::Parser)]
 pub struct CreateCmd {
     /// The alias of the Penumbra environment to be created.
