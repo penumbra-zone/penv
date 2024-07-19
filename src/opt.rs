@@ -1,6 +1,8 @@
+use crate::default_home as default_pvm_home;
 use camino::Utf8PathBuf;
 use clap::Parser;
-use directories::ProjectDirs;
+use pcli::default_home as default_pcli_home;
+use pclientd::default_home as default_pclientd_home;
 use std::io::IsTerminal as _;
 use tracing_subscriber::EnvFilter;
 use url::Url;
@@ -16,9 +18,15 @@ use crate::command::Command;
 pub struct Opt {
     #[clap(subcommand)]
     pub cmd: Command,
-    /// The home directory used to store configuration and data.
-    #[clap(long, default_value_t = default_home(), env = "PENUMBRA_PVM_HOME")]
+    /// The home directory used to store pvm-related configuration and cache data.
+    #[clap(long, default_value_t = default_pvm_home(), env = "PENUMBRA_PVM_HOME")]
     pub home: Utf8PathBuf,
+    /// The home directory used to store pcli-related configuration and data.
+    #[clap(long, default_value_t = default_pcli_home(), env = "PENUMBRA_PCLI_HOME")]
+    pub pcli_home: Utf8PathBuf,
+    /// The home directory used to store pclientd-related state and data.
+    #[clap(long, default_value_t = default_pclientd_home(), env = "PENUMBRA_PCLIENTD_HOME")]
+    pub pclientd_home: Utf8PathBuf,
     /// Override the GRPC URL that will be used to connect to a fullnode.
     ///
     /// By default, this URL is provided by pcli's config. See `pcli init` for more information.
@@ -34,12 +42,4 @@ impl Opt {
             .with_writer(std::io::stderr)
             .init();
     }
-}
-
-fn default_home() -> Utf8PathBuf {
-    let path = ProjectDirs::from("zone", "penumbra", "pvm")
-        .expect("Failed to get platform data dir")
-        .data_dir()
-        .to_path_buf();
-    Utf8PathBuf::from_path_buf(path).expect("Platform default data dir was not UTF-8")
 }
