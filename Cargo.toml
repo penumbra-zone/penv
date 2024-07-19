@@ -1,0 +1,69 @@
+[package]
+name = "pvm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow                           = { version = "1.0.75" }
+camino                           = { version = "1" }
+clap                             = { version = "3.2", features = ["derive", "env"] }
+directories                      = { version = "4.0.1" }
+semver                           = { version = "1.0" }
+tokio                            = { version = "1.3", features = ["full"] }
+tracing                          = { version = "0.1" }
+tracing-subscriber               = { version = "0.3.17", features = ["env-filter"] }
+url                              = { version = "2.2" }
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.13.3"
+# CI backends to support
+ci = ["github"]
+# The archive format to use for non-windows builds (defaults .tar.xz)
+unix-archive = ".tar.gz"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+# The installers to generate for each app
+installers = ["shell"]
+# Publish jobs to run in CI
+pr-run-mode = "plan"
+# Skip checking whether the specified configuration files are up to date
+allow-dirty = ["ci"]
+# Whether to install an updater program
+install-updater = false
+
+[workspace.metadata.dist.github-custom-runners]
+aarch64-apple-darwin = "macos-13-large"
+x86_64-apple-darwin = "macos-13-large"
+x86_64-unknown-linux-gnu = "buildjet-32vcpu-ubuntu-2204"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+
+# config for 'cargo release'
+[workspace.metadata.release]
+# Instruct cargo-release to increment versions for all packages in the workspace in lockstep.
+shared-version = true
+# Format spec for the auto-generated git tag, based on new version for release.
+tag-name = "v{{version}}"
+# The message is required for an annotated tag to be created.
+tag-message                = "pvm version {{version}}"
+pre-release-commit-message = "chore: release version {{version}}"
+# Don't push to crates.io; we're still using git branches for velocity.
+publish = false
+# Do commit, tag, and push the version bump, triggering a new release.
+tag = true
+# Don't push, since we're still evaluating the new release workflow.
+push = false
+
+[workspace.package]
+authors    = ["Penumbra Labs <team@penumbra.zone>"]
+edition    = "2021"
+version    = "0.1.0"
+repository = "https://github.com/penumbra-zone/pvm"
+homepage   = "https://penumbra.zone"
+license    = "MIT OR Apache-2.0"
+
+
