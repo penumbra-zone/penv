@@ -27,7 +27,7 @@ impl InstallCmd {
         let repository_name = &self.repository_name;
 
         println!("installing {}", self.penumbra_version);
-        let mut pvm = Pvm::new(repository_name.clone(), home.clone())?;
+        let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
         pvm.install_release(self.penumbra_version.clone(), Triple::host())
             .await?;
 

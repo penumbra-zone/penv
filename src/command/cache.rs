@@ -55,8 +55,9 @@ impl CacheCmd {
                 subcmd: CacheTopSubCmd::Reset,
             } => {
                 // Wipe the existing directory.
-                if home.exists() {
-                    std::fs::remove_dir_all(&home)?;
+                let config_path = home.join("cache.toml");
+                if config_path.exists() {
+                    std::fs::remove_file(&config_path)?;
                 }
 
                 // Re-instantiate and persist the cache.

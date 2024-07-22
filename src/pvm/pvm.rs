@@ -1,13 +1,27 @@
-use anyhow::{anyhow, Result};
+use std::{
+    fmt,
+    fs::{self, File},
+    io::Write as _,
+};
+
+use anyhow::{anyhow, Context as _, Result};
 use camino::Utf8PathBuf;
 use semver::VersionReq;
+use serde::{
+    de::{self, MapAccess, Visitor},
+    ser::SerializeStruct as _,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use target_lexicon::Triple;
 use url::Url;
 
 use crate::pvm::release::Release;
 
 use super::{
-    cache::cache::Cache, downloader::Downloader, environment::Environment, release::VersionOrLatest,
+    cache::cache::Cache,
+    downloader::Downloader,
+    environment::{Environment, Environments},
+    release::VersionOrLatest,
 };
 
 /// The top-level type for the Penumbra Version Manager.
@@ -17,18 +31,215 @@ use super::{
 pub struct Pvm {
     pub cache: Cache,
     pub downloader: Downloader,
-    pub environments: Vec<Environment>,
+    pub environments: Environments,
+    pub repository_name: String,
+    pub home_dir: Utf8PathBuf,
+}
+
+impl Serialize for Pvm {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Pvm", 3)?;
+        state.serialize_field("repository_name", &self.repository_name)?;
+        state.serialize_field("home_dir", &self.home_dir)?;
+        state.serialize_field("environments", &self.environments)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Pvm {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum Field {
+            Environments,
+            RepositoryName,
+            HomeDir,
+        }
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`repository_name`, `home_dir`, or `environments`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "repository_name" => Ok(Field::RepositoryName),
+                            "home_dir" => Ok(Field::HomeDir),
+                            "environments" => Ok(Field::Environments),
+                            _ => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
+        struct PvmVisitor;
+
+        impl<'de> Visitor<'de> for PvmVisitor {
+            type Value = Pvm;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct Pvm")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<Pvm, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut repository_name: Option<String> = None;
+                let mut home_dir: Option<Utf8PathBuf> = None;
+                let mut environments = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::RepositoryName => {
+                            if repository_name.is_some() {
+                                return Err(de::Error::duplicate_field("repository_name"));
+                            }
+                            repository_name = Some(map.next_value()?);
+                        }
+                        Field::HomeDir => {
+                            if home_dir.is_some() {
+                                return Err(de::Error::duplicate_field("home_dir"));
+                            }
+                            home_dir = Some(map.next_value()?);
+                        }
+                        Field::Environments => {
+                            if environments.is_some() {
+                                return Err(de::Error::duplicate_field("environments"));
+                            }
+                            environments = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let repository_name =
+                    repository_name.ok_or_else(|| de::Error::missing_field("repository_name"))?;
+                let home_dir = home_dir.ok_or_else(|| de::Error::missing_field("home_dir"))?;
+                let environments =
+                    environments.ok_or_else(|| de::Error::missing_field("environments"))?;
+
+                Ok(Pvm {
+                    repository_name: repository_name.clone(),
+                    home_dir: home_dir.clone(),
+                    environments,
+                    cache: Cache::new(home_dir.into()).map_err(de::Error::custom)?,
+                    downloader: Downloader::new(repository_name).map_err(de::Error::custom)?,
+                })
+            }
+        }
+
+        const FIELDS: &'static [&'static str] = &["repository_name", "home_dir", "environments"];
+        deserializer.deserialize_struct("Pvm", FIELDS, PvmVisitor)
+    }
 }
 
 impl Pvm {
     /// Create a new instance of the Penumbra Version Manager.
-    pub fn new(repository_name: String, home: Utf8PathBuf) -> Result<Self> {
-        // TODO: load environments from disk if they exist
-        Ok(Self {
-            cache: Cache::new(home.clone())?,
-            downloader: Downloader::new(repository_name)?,
-            environments: Vec::new(),
-        })
+    pub fn new(home: Utf8PathBuf) -> Result<Self> {
+        // read config file to fetch existing environments
+        let pvm_path = home.join("pvm.toml");
+        let metadata = fs::metadata(&pvm_path);
+
+        let pvm = if metadata.is_err() || !metadata.unwrap().is_file() {
+            Self {
+                cache: Cache::new(home.clone())?,
+                downloader: Downloader::new("penumbra-zone/penumbra".to_string())?,
+                environments: Environments {
+                    environments: Vec::new(),
+                },
+                // TODO: shouldn't be hardcoded here
+                repository_name: "penumbra-zone/penumbra".to_string(),
+                home_dir: home,
+            }
+        } else {
+            let pvm_contents = fs::read_to_string(pvm_path)?;
+            toml::from_str(&pvm_contents)?
+        };
+
+        tracing::debug!(environments=?pvm.environments, "created pvm with environments");
+        Ok(pvm)
+    }
+
+    // TODO: delete this method and handle alternative repositories better
+    pub fn new_from_repository(repository_name: String, home: Utf8PathBuf) -> Result<Self> {
+        // read config file to fetch existing environments
+        let pvm_path = home.join("pvm.toml");
+        let metadata = fs::metadata(&pvm_path);
+
+        let pvm = if metadata.is_err() || !metadata.unwrap().is_file() {
+            Self {
+                cache: Cache::new(home.clone())?,
+                downloader: Downloader::new(repository_name.clone())?,
+                environments: Environments {
+                    environments: Vec::new(),
+                },
+                repository_name,
+                home_dir: home.clone(),
+            }
+        } else {
+            let pvm_contents = fs::read_to_string(pvm_path)?;
+            toml::from_str(&pvm_contents)?
+        };
+
+        tracing::debug!(environments = ?pvm.environments, "created pvm with environments");
+        Ok(pvm)
+    }
+
+    pub fn delete_environment(&mut self, environment_alias: String) -> Result<()> {
+        if !self
+            .environments
+            .iter()
+            .any(|e| e.alias == environment_alias)
+        {
+            return Err(anyhow!(
+                "Environment with alias {} doesn't exist",
+                environment_alias
+            ));
+        }
+
+        // Get the matching environment
+        // TODO: move this into an impl on Environments
+        let environment = self
+            .environments
+            .iter()
+            .find(|e| e.alias == environment_alias)
+            .unwrap();
+
+        // Remove the environment from disk
+        let env_path = &environment.root_dir;
+        if env_path.exists() {
+            tracing::debug!("removing environment directory: {}", env_path);
+            std::fs::remove_dir_all(&env_path)?;
+        }
+
+        // Remove the environment from the app
+        self.environments.retain(|e| e.alias != environment_alias);
+
+        // Persist the updated state
+        self.persist()?;
+
+        println!("deleted environment {}", environment_alias);
+
+        Ok(())
     }
 
     pub fn create_environment(
@@ -38,6 +249,17 @@ impl Pvm {
         grpc_url: Url,
         repository_name: String,
     ) -> Result<Environment> {
+        if self
+            .environments
+            .iter()
+            .any(|e| e.alias == environment_alias)
+        {
+            return Err(anyhow!(
+                "Environment with alias {} already exists",
+                environment_alias
+            ));
+        }
+
         // Find the best matching version
         let cache = &self.cache;
         let matching_installed_version = match cache.find_best_match(&penumbra_version) {
@@ -68,6 +290,8 @@ impl Pvm {
 
         // Add a reference to the environment to the app
         self.environments.push(environment.clone());
+
+        self.persist()?;
 
         Ok(environment)
     }
@@ -162,8 +386,28 @@ impl Pvm {
         );
         cache.install_release(&installable_release)?;
 
+        self.persist()?;
+
+        Ok(())
+    }
+
+    pub fn pvm_file_path(&self) -> Utf8PathBuf {
+        self.home_dir.join("pvm.toml")
+    }
+
+    pub fn persist(&self) -> Result<()> {
+        fs::create_dir_all(&self.home_dir)
+            .with_context(|| format!("Failed to create home directory {}", self.home_dir))?;
+
+        let toml_pvm = toml::to_string(&self)?;
+
+        tracing::debug!(pvm_file_path=?self.pvm_file_path(),"create file");
+
+        let mut file = File::create(self.pvm_file_path())?;
+        file.write_all(toml_pvm.as_bytes())?;
+
         tracing::debug!("persist cache");
-        cache.persist()?;
+        self.cache.persist()?;
 
         Ok(())
     }

@@ -73,7 +73,7 @@ pub struct RenameCmd {
 }
 
 impl ManageCmd {
-    pub async fn exec(&self, home: Utf8PathBuf) -> Result<Environment> {
+    pub async fn exec(&self, home: Utf8PathBuf) -> Result<()> {
         match self {
             ManageCmd {
                 subcmd:
@@ -84,14 +84,25 @@ impl ManageCmd {
                         repository_name,
                     }),
             } => {
-                let mut pvm = Pvm::new(repository_name.clone(), home.clone())?;
+                let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
 
                 pvm.create_environment(
                     environment_alias.clone(),
                     penumbra_version.clone(),
                     grpc_url.clone(),
                     repository_name.clone(),
-                )
+                )?;
+
+                Ok(())
+            }
+            ManageCmd {
+                subcmd: ManageTopSubCmd::Delete(DeleteCmd { environment_alias }),
+            } => {
+                let mut pvm = Pvm::new(home.clone())?;
+
+                pvm.delete_environment(environment_alias.clone())?;
+
+                Ok(())
             }
             _ => Err(anyhow!("unimplemented")),
         }

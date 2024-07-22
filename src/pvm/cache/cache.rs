@@ -148,7 +148,7 @@ impl Cache {
 
         let toml_cache = toml::to_string(&self.data)?;
 
-        println!("create file: {}", self.config_file_path());
+        tracing::debug!(config_file_path=?self.config_file_path(),"create file");
         let mut file = File::create(self.config_file_path())?;
         file.write_all(toml_cache.as_bytes())?;
 
