@@ -93,6 +93,8 @@ impl ManageCmd {
                     repository_name.clone(),
                 )?;
 
+                println!("created environment {}", environment_alias);
+
                 Ok(())
             }
             ManageCmd {
