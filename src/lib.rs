@@ -6,6 +6,7 @@ use directories::ProjectDirs;
 
 pub mod command;
 pub mod opt;
+mod pvm;
 
 pub fn default_home() -> Utf8PathBuf {
     let path = ProjectDirs::from("zone", "penumbra", "pvm")

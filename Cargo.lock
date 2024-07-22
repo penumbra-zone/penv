@@ -692,6 +692,9 @@ name = "camino"
 version = "1.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0ec6b951b160caa93cc0c7b209e5a3bff7aae9062213451ac99493cd844c239"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "cc"
@@ -834,6 +837,7 @@ dependencies = [
 [[package]]
 name = "cnidarium"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -867,6 +871,7 @@ dependencies = [
 [[package]]
 name = "cnidarium-component"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -977,6 +982,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "crc32fast"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "critical-section"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1075,12 +1089,36 @@ dependencies = [
 
 [[package]]
 name = "darling"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a01d95850c592940db9b8194bc39f4bc0e89dee5c4265e4b1807c34a9aba453c"
+dependencies = [
+ "darling_core 0.13.4",
+ "darling_macro 0.13.4",
+]
+
+[[package]]
+name = "darling"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f63b86c8a8826a49b8c21f08a2d07338eec8d900540f8630dc76284be802989"
 dependencies = [
- "darling_core",
- "darling_macro",
+ "darling_core 0.20.10",
+ "darling_macro 0.20.10",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "859d65a907b6852c9361e3185c862aae7fafd2887876799fa55f5f99dc40d610"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2 1.0.86",
+ "quote",
+ "strsim 0.10.0",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -1099,11 +1137,22 @@ dependencies = [
 
 [[package]]
 name = "darling_macro"
+version = "0.13.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c972679f83bdf9c42bd905396b6c3588a843a17f0f16dfcfa3e2c5d57441835"
+dependencies = [
+ "darling_core 0.13.4",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "darling_macro"
 version = "0.20.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d336a2a514f6ccccaa3e09b02d41d35330c07ddf03a62165fcec10bb561c7806"
 dependencies = [
- "darling_core",
+ "darling_core 0.20.10",
  "quote",
  "syn 2.0.71",
 ]
@@ -1143,6 +1192,7 @@ dependencies = [
 [[package]]
 name = "decaf377-fmd"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -1156,6 +1206,7 @@ dependencies = [
 [[package]]
 name = "decaf377-frost"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -1171,6 +1222,7 @@ dependencies = [
 [[package]]
 name = "decaf377-ka"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "ark-ff",
  "decaf377",
@@ -1492,6 +1544,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "filetime"
+version = "0.2.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ee447700ac8aa0b2f2bd7bc4462ad686ba06baa6727ac149a2d6277f0d240fd"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "redox_syscall 0.4.1",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "fixed-hash"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1508,6 +1572,16 @@ name = "fixedbitset"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
+
+[[package]]
+name = "flate2"
+version = "1.0.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f54427cfd1c7829e2a139fcefea601bf088ebca651d2bf53ebc600eac295dae"
+dependencies = [
+ "crc32fast",
+ "miniz_oxide",
+]
 
 [[package]]
 name = "flex-error"
@@ -3111,6 +3185,7 @@ dependencies = [
 [[package]]
 name = "pcli"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3170,7 +3245,7 @@ dependencies = [
  "rpassword",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "simple-base64",
  "tendermint",
@@ -3190,6 +3265,7 @@ dependencies = [
 [[package]]
 name = "pclientd"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3218,7 +3294,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "tendermint",
  "tokio",
@@ -3269,6 +3345,7 @@ checksum = "e3aeb8f54c078314c2065ee649a7241f46b9d8e418e1a9581ba0546657d7aa3a"
 [[package]]
 name = "penumbra-app"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3321,7 +3398,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_unit_struct",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "tempfile",
  "tendermint",
@@ -3343,6 +3420,7 @@ dependencies = [
 [[package]]
 name = "penumbra-asset"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3371,7 +3449,7 @@ dependencies = [
  "rand_core",
  "regex",
  "serde",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "thiserror",
  "tracing",
@@ -3380,6 +3458,7 @@ dependencies = [
 [[package]]
 name = "penumbra-auction"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3419,7 +3498,7 @@ dependencies = [
  "rand_core",
  "regex",
  "serde",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "tap",
  "tendermint",
@@ -3431,6 +3510,7 @@ dependencies = [
 [[package]]
 name = "penumbra-community-pool"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3462,6 +3542,7 @@ dependencies = [
 [[package]]
 name = "penumbra-compact-block"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3497,6 +3578,7 @@ dependencies = [
 [[package]]
 name = "penumbra-custody"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "argon2",
@@ -3523,7 +3605,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_json",
- "serde_with",
+ "serde_with 3.9.0",
  "tokio",
  "tonic",
  "tracing",
@@ -3532,6 +3614,7 @@ dependencies = [
 [[package]]
 name = "penumbra-dex"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3589,6 +3672,7 @@ dependencies = [
 [[package]]
 name = "penumbra-distributions"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3606,6 +3690,7 @@ dependencies = [
 [[package]]
 name = "penumbra-fee"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3632,6 +3717,7 @@ dependencies = [
 [[package]]
 name = "penumbra-funding"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3655,6 +3741,7 @@ dependencies = [
 [[package]]
 name = "penumbra-governance"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3707,6 +3794,7 @@ dependencies = [
 [[package]]
 name = "penumbra-ibc"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3743,6 +3831,7 @@ dependencies = [
 [[package]]
 name = "penumbra-keys"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "aes",
  "anyhow",
@@ -3786,6 +3875,7 @@ dependencies = [
 [[package]]
 name = "penumbra-num"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3821,6 +3911,7 @@ dependencies = [
 [[package]]
 name = "penumbra-proof-params"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ec",
@@ -3833,16 +3924,12 @@ dependencies = [
  "ark-std",
  "bech32",
  "decaf377",
- "hex",
  "lazy_static",
  "num-bigint",
  "once_cell",
  "rand",
  "rand_core",
- "regex",
- "reqwest",
  "serde",
- "serde_json",
  "sha2 0.10.8",
  "tracing",
 ]
@@ -3850,6 +3937,7 @@ dependencies = [
 [[package]]
 name = "penumbra-proof-setup"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ec",
@@ -3867,12 +3955,12 @@ dependencies = [
  "penumbra-shielded-pool",
  "penumbra-stake",
  "rand_core",
- "rayon",
 ]
 
 [[package]]
 name = "penumbra-proto"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3907,6 +3995,7 @@ dependencies = [
 [[package]]
 name = "penumbra-sct"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3942,6 +4031,7 @@ dependencies = [
 [[package]]
 name = "penumbra-shielded-pool"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -3995,6 +4085,7 @@ dependencies = [
 [[package]]
 name = "penumbra-stake"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -4032,7 +4123,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_unit_struct",
- "serde_with",
+ "serde_with 3.9.0",
  "sha2 0.10.8",
  "tap",
  "tendermint",
@@ -4044,6 +4135,7 @@ dependencies = [
 [[package]]
 name = "penumbra-tct"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "ark-ed-on-bls12-377",
  "ark-ff",
@@ -4071,6 +4163,7 @@ dependencies = [
 [[package]]
 name = "penumbra-tendermint-proxy"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4103,6 +4196,7 @@ dependencies = [
 [[package]]
 name = "penumbra-test-subscriber"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "tracing",
  "tracing-subscriber 0.3.18",
@@ -4111,6 +4205,7 @@ dependencies = [
 [[package]]
 name = "penumbra-tower-trace"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "futures",
  "hex",
@@ -4132,6 +4227,7 @@ dependencies = [
 [[package]]
 name = "penumbra-transaction"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -4183,6 +4279,7 @@ dependencies = [
 [[package]]
 name = "penumbra-txhash"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "blake2b_simd 1.0.2",
@@ -4196,6 +4293,7 @@ dependencies = [
 [[package]]
 name = "penumbra-view"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-std",
@@ -4254,6 +4352,7 @@ dependencies = [
 [[package]]
 name = "penumbra-wallet"
 version = "0.79.0"
+source = "git+https://github.com/penumbra-zone/penumbra.git?branch=pvm_spike#137836dbe68d766a6ec1fd28295c8f0b6fd35f5e"
 dependencies = [
  "anyhow",
  "ark-std",
@@ -4599,10 +4698,23 @@ dependencies = [
  "camino",
  "clap",
  "directories",
+ "flate2",
+ "hex",
+ "indicatif",
  "pcli",
  "pclientd",
+ "regex",
+ "reqwest",
  "semver",
+ "serde",
+ "serde_json",
+ "serde_with 1.14.0",
+ "sha2 0.10.8",
+ "tar",
+ "target-lexicon",
+ "tempfile",
  "tokio",
+ "toml 0.5.11",
  "tracing",
  "tracing-subscriber 0.3.18",
  "url",
@@ -5162,6 +5274,9 @@ name = "semver"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61697e0a1c7e512e84a621326239844a24d8207b4669b41bc18b32ea5cbf988b"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "serde"
@@ -5256,6 +5371,16 @@ dependencies = [
 
 [[package]]
 name = "serde_with"
+version = "1.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "678b5a069e50bf00ecd22d0cd8ddf7c236f68581b03db652061ed5eb13a312ff"
+dependencies = [
+ "serde",
+ "serde_with_macros 1.5.2",
+]
+
+[[package]]
+name = "serde_with"
 version = "3.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cecfa94848272156ea67b2b1a53f20fc7bc638c4a46d2f8abde08f05f4b857"
@@ -5268,8 +5393,20 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "serde_with_macros",
+ "serde_with_macros 3.9.0",
  "time",
+]
+
+[[package]]
+name = "serde_with_macros"
+version = "1.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e182d6ec6f05393cc0e5ed1bf81ad6db3a8feedf8ee515ecdd369809bcce8082"
+dependencies = [
+ "darling 0.13.4",
+ "proc-macro2 1.0.86",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -5278,7 +5415,7 @@ version = "3.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8fee4991ef4f274617a51ad4af30519438dacb2f56ac773b08a1922ff743350"
 dependencies = [
- "darling",
+ "darling 0.20.10",
  "proc-macro2 1.0.86",
  "quote",
  "syn 2.0.71",
@@ -5596,6 +5733,26 @@ name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
+
+[[package]]
+name = "tar"
+version = "0.4.41"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb797dad5fb5b76fcf519e702f4a589483b5ef06567f160c392832c1f5e44909"
+dependencies = [
+ "filetime",
+ "libc",
+ "xattr",
+]
+
+[[package]]
+name = "target-lexicon"
+version = "0.12.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4873307b7c257eddcb50c9bedf158eb669578359fb28428bef438fec8e6ba7c2"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "tempfile"
@@ -6636,6 +6793,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
 dependencies = [
  "tap",
+]
+
+[[package]]
+name = "xattr"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8da84f1a25939b27f6820d92aed108f83ff920fdf11a7b19366c27c4cda81d4f"
+dependencies = [
+ "libc",
+ "linux-raw-sys",
+ "rustix",
 ]
 
 [[package]]
