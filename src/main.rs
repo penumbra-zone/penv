@@ -21,6 +21,10 @@ async fn main() -> Result<()> {
     match cmd {
         Command::Install(install_cmd) => install_cmd.exec(opt.home).await?,
         Command::Cache(cache_cmd) => cache_cmd.exec(opt.home).await?,
+        Command::Manage(manage_cmd) => {
+            manage_cmd.exec(opt.home).await?;
+            ()
+        }
         _ => unimplemented!("not implemented yet :("),
     }
 

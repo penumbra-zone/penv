@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::pvm::release::{InstallableRelease, InstalledAsset, InstalledRelease};
 
+/// The Cache is responsible for maintaining a directory of all installed software versions.
 #[derive(Debug)]
 pub struct Cache {
     pub home: Utf8PathBuf,
@@ -37,6 +38,18 @@ impl Cache {
         };
 
         Ok(Self { home, data })
+    }
+
+    pub fn find_best_match(
+        &self,
+        required_version: &semver::VersionReq,
+    ) -> Option<&InstalledRelease> {
+        let matching_versions = self
+            .list(Some(required_version))
+            .or_else(|_| Ok::<Vec<&InstalledRelease>, anyhow::Error>(vec![]))
+            .unwrap();
+
+        matching_versions.iter().max_by_key(|r| &r.version).copied()
     }
 
     pub fn install_release(&mut self, release: &InstallableRelease) -> Result<()> {
@@ -113,6 +126,7 @@ impl Cache {
             body: release.release.body.clone(),
             assets: installed_assets,
             name: release.release.name.clone(),
+            root_dir: version_path,
         };
         self.data.installed_releases.push(installed_release);
 
@@ -182,6 +196,7 @@ mod tests {
                     local_filepath: Utf8PathBuf::from("/tmp/fake"),
                 }],
                 name: "Release 1.0.0".to_string(),
+                root_dir: Utf8PathBuf::from("/tmp/fake"),
             }],
         };
 
@@ -194,6 +209,7 @@ mod tests {
             version = "1.0.0"
             body = "Release notes for version 1.0.0"
             name = "Release 1.0.0"
+            root_dir = "/tmp/fake"
 
             [[installed_releases.assets]]
             target_arch = "x86_64-unknown-linux-gnu"

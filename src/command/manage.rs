@@ -1,5 +1,9 @@
+use anyhow::{anyhow, Result};
+use camino::Utf8PathBuf;
 use semver::VersionReq;
 use url::Url;
+
+use crate::pvm::{environment::Environment, Pvm};
 
 #[derive(Debug, clap::Parser)]
 pub struct ManageCmd {
@@ -66,4 +70,30 @@ pub struct RenameCmd {
     /// The new alias to rename the Penumbra environment.
     #[clap(display_order = 200)]
     new_alias: String,
+}
+
+impl ManageCmd {
+    pub async fn exec(&self, home: Utf8PathBuf) -> Result<Environment> {
+        match self {
+            ManageCmd {
+                subcmd:
+                    ManageTopSubCmd::Create(CreateCmd {
+                        environment_alias,
+                        penumbra_version,
+                        grpc_url,
+                        repository_name,
+                    }),
+            } => {
+                let mut pvm = Pvm::new(repository_name.clone(), home.clone())?;
+
+                pvm.create_environment(
+                    environment_alias.clone(),
+                    penumbra_version.clone(),
+                    grpc_url.clone(),
+                    repository_name.clone(),
+                )
+            }
+            _ => Err(anyhow!("unimplemented")),
+        }
+    }
 }

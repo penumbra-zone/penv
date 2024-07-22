@@ -46,6 +46,9 @@ impl Downloader {
     pub fn download(
         &self,
         url: &str,
+        // TODO: there should be a cli flag to bypass shasum
+        // verification, as it's best to force the user to bypass it
+        // rather than ever doing so implicitly
         expected_shasum: Option<Vec<u8>>,
         display_progress: bool,
     ) -> Result<Vec<Utf8PathBuf>> {
@@ -203,6 +206,7 @@ impl Downloader {
         release: &Release,
         target_arch: String,
     ) -> Result<InstallableRelease> {
+        // TODO: make downloads take place in multiple tasks simultaneously
         let mut pcli = None;
         let mut pclientd = None;
         let mut pd = None;

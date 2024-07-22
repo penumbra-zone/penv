@@ -51,6 +51,8 @@ pub struct InstalledRelease {
     pub assets: Vec<InstalledAsset>,
     /// The name of the release on GitHub.
     pub name: String,
+    /// The root directory of the environment.
+    pub root_dir: Utf8PathBuf,
 }
 
 impl Display for InstalledRelease {
@@ -68,6 +70,7 @@ impl Serialize for InstalledRelease {
         state.serialize_field("version", &self.version)?;
         state.serialize_field("body", &self.body)?;
         state.serialize_field("name", &self.name)?;
+        state.serialize_field("root_dir", &self.root_dir)?;
         state.serialize_field("assets", &self.assets)?;
         state.end()
     }
@@ -83,6 +86,7 @@ impl<'de> Deserialize<'de> for InstalledRelease {
             Body,
             Assets,
             Name,
+            RootDir,
         }
 
         impl<'de> Deserialize<'de> for Field {
@@ -96,7 +100,7 @@ impl<'de> Deserialize<'de> for InstalledRelease {
                     type Value = Field;
 
                     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                        formatter.write_str("`version`, `body`, `assets`, or `name`")
+                        formatter.write_str("`version`, `body`, `assets`, `root_dir`, or `name`")
                     }
 
                     fn visit_str<E>(self, value: &str) -> Result<Field, E>
@@ -108,6 +112,7 @@ impl<'de> Deserialize<'de> for InstalledRelease {
                             "body" => Ok(Field::Body),
                             "assets" => Ok(Field::Assets),
                             "name" => Ok(Field::Name),
+                            "root_dir" => Ok(Field::RootDir),
                             _ => Err(de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -134,6 +139,7 @@ impl<'de> Deserialize<'de> for InstalledRelease {
                 let mut body = None;
                 let mut assets = None;
                 let mut name = None;
+                let mut root_dir = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -161,6 +167,12 @@ impl<'de> Deserialize<'de> for InstalledRelease {
                             }
                             name = Some(map.next_value()?);
                         }
+                        Field::RootDir => {
+                            if root_dir.is_some() {
+                                return Err(de::Error::duplicate_field("root_dir"));
+                            }
+                            root_dir = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -168,17 +180,19 @@ impl<'de> Deserialize<'de> for InstalledRelease {
                 let body = body.ok_or_else(|| de::Error::missing_field("body"))?;
                 let assets = assets.ok_or_else(|| de::Error::missing_field("assets"))?;
                 let name = name.ok_or_else(|| de::Error::missing_field("name"))?;
+                let root_dir = root_dir.ok_or_else(|| de::Error::missing_field("root_dir"))?;
 
                 Ok(InstalledRelease {
                     version,
                     body,
                     assets,
                     name,
+                    root_dir,
                 })
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["version", "body", "assets", "name"];
+        const FIELDS: &'static [&'static str] = &["version", "body", "assets", "name", "root_dir"];
         deserializer.deserialize_struct("InstalledRelease", FIELDS, InstalledReleaseVisitor)
     }
 }
@@ -247,44 +261,5 @@ pub(crate) struct InstallableRelease {
 impl InstallableRelease {
     pub fn version(&self) -> &Version {
         &self.release.version
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::str::FromStr as _;
-
-    use semver::Version;
-
-    use super::*;
-
-    #[test]
-    fn deserialize_release() {
-        let release = InstalledRelease {
-            version: Version::parse("1.0.0").unwrap(),
-            body: Some("Release notes for version 1.0.0".to_string()),
-            assets: vec![InstalledAsset {
-                target_arch: Triple::from_str("x86_64-unknown-linux-gnu").unwrap(),
-                local_filepath: Utf8PathBuf::from("/tmp/fake"),
-            }],
-            name: "Release 1.0.0".to_string(),
-        };
-
-        // Serialize to TOML string
-        eprintln!("{}", toml::to_string(&release).unwrap());
-
-        // Example TOML string for deserialization
-        let toml_str = r#"
-            version = "1.0.0"
-            body = "Release notes for version 1.0.0"
-            name = "Release 1.0.0"
-
-            [[assets]]
-            target_arch = "x86_64-unknown-linux-gnu"
-            local_filepath = "/tmp/fake"
-        "#;
-
-        // Deserialize from TOML string
-        toml::from_str::<InstalledRelease>(toml_str).unwrap();
     }
 }
