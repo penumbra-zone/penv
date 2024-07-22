@@ -14,6 +14,7 @@ pub struct Environment {
     // to the latest matching the version_requirement
     pub pinned_version: Version,
     pub root_dir: Utf8PathBuf,
+    // TODO: include whether there should be a pd config generated as well
 }
 
 #[derive(Debug, Serialize, Deserialize)]

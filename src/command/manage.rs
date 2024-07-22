@@ -24,6 +24,7 @@ pub enum ManageTopSubCmd {
     Rename(RenameCmd),
     // #[clap(flatten)]
     // Migrate(MigrateSubCmd),
+    // TODO: add support for upgrading pinned version with same SemverReq
 }
 
 // TODO: it would be extremely useful to create an environment that can run
@@ -86,7 +87,7 @@ impl ManageCmd {
             } => {
                 let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
 
-                pvm.create_environment(
+                let env = pvm.create_environment(
                     environment_alias.clone(),
                     penumbra_version.clone(),
                     grpc_url.clone(),
@@ -95,7 +96,7 @@ impl ManageCmd {
 
                 println!(
                     "created environment {} with pinned version {}",
-                    environment_alias, penumbra_version
+                    environment_alias, env.pinned_version
                 );
 
                 Ok(())

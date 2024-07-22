@@ -1,4 +1,5 @@
 use cache::CacheCmd;
+use env::EnvCmd;
 use install::InstallCmd;
 use list::ListCmd;
 use manage::ManageCmd;
@@ -6,6 +7,7 @@ use use_::UseCmd;
 use which::WhichCmd;
 
 mod cache;
+mod env;
 mod install;
 mod list;
 mod manage;
@@ -38,4 +40,7 @@ pub enum Command {
     /// Display information about the active Penumbra environment.
     #[clap(display_order = 600, visible_alias = "w")]
     Which(WhichCmd),
+    /// Output the necessary environment variables to use the active Penumbra environment.
+    #[clap(display_order = 700, visible_alias = "e")]
+    Env(EnvCmd),
 }
