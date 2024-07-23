@@ -2,42 +2,23 @@ use std::env;
 
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
+use serde::Serialize;
 
 #[derive(Debug, clap::Parser)]
 pub struct HookCmd {
     /// The shell to output hook scripts for.
-    // TODO: should be an enum
-    shell: String,
+    #[clap(default_value_t, value_enum)]
+    shell: Shell,
 }
 
 // Supported shells for configuring pvm environments
+#[derive(Debug, Clone, Default, clap::ValueEnum, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Shell {
     Bash,
     Zsh,
-}
-
-// Implement String -> Shell conversion, to aid in parsing CLI args.
-impl TryFrom<String> for Shell {
-    type Error = anyhow::Error;
-    fn try_from(s: String) -> Result<Shell> {
-        if s == "bash" {
-            Ok(Shell::Bash)
-        } else if s == "zsh" {
-            Ok(Shell::Zsh)
-        } else {
-            anyhow::bail!("unsupported shell: {}", s)
-        }
-    }
-}
-
-// Implement Shell -> String conversion, to aid in looking up relevant configs.
-impl Into<String> for Shell {
-    fn into(self) -> String {
-        match self {
-            Shell::Bash => String::from("bash"),
-            Shell::Zsh => String::from("zsh"),
-        }
-    }
+    #[default]
+    Unsupported,
 }
 
 impl HookCmd {
@@ -54,7 +35,7 @@ impl HookCmd {
         let mut context = tera::Context::new();
         context.insert("pvm_executable", &current_exe);
 
-        let shell = Shell::try_from(self.shell.clone())?;
+        let shell = self.shell.clone();
         match shell {
             Shell::Zsh => {
                 let hook_template = include_str!("../../files/zsh-hook.j2");
@@ -66,6 +47,7 @@ impl HookCmd {
                 let hook = tera::Tera::one_off(hook_template, &context, false)?;
                 println!("{}", hook);
             }
+            Shell::Unsupported => panic!("unsupported shell: {:?}", shell),
         }
         Ok(())
     }

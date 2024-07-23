@@ -1,0 +1,21 @@
+{% if pvm_active_environment is defined %}
+export PVM_ACTIVE_ENVIRONMENT="{{ pvm_active_environment }}"
+{% if pcli_home is defined %}
+export PENUMBRA_PCLI_HOME="{{ pcli_home }}"
+{% endif %}
+{% if pclientd_home is defined %}
+export PENUMBRA_PCLIENTD_HOME="{{ pclientd_home }}"
+{% endif %}
+{% if pd_home is defined %}
+export PENUMBRA_PD_HOME="{{ pd_home }}"
+{% endif %}
+{% else %}
+unset PVM_ACTIVE_ENVIRONMENT
+unset PENUMBRA_PCLI_HOME
+unset PENUMBRA_PCLIENTD_HOME
+unset PENUMBRA_PD_HOME
+{% endif %}
+
+{% if path_add is defined %}
+export PATH="{{ path_add }}:$PATH"
+{% endif %}
