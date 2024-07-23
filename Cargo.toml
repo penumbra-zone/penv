@@ -13,12 +13,10 @@ flate2 = "1.0"
 futures = "0.3"
 hex = "0.4.3"
 indicatif = "0.16"
-pcli                             = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "main", default-features = false }
-pclientd                         = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "main", default-features = false }
 regex                            = { version = "1.5" }
 reqwest                          = { version = "0.11", features = ["stream", "json"] }
 semver                           = { version = "1.0", features = ["serde"] }
-serde                            = { version = "1.0", features = ["derive"] }
+serde                            = { version = "1.0", features = ["derive", "rc"] }
 serde_json                       = { version = "1.0" }
 serde_with = "1.11"
 sha2 = "0.10"
@@ -31,7 +29,7 @@ tokio-util                       = { version = "0.7" }
 toml = "0.5"
 tracing                          = { version = "0.1" }
 tracing-subscriber               = { version = "0.3.17", features = ["env-filter"] }
-url                              = { version = "2.2" }
+url                              = { version = "2.2", features = ["serde"] }
 
 
 # Config for 'cargo dist'

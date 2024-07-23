@@ -27,6 +27,13 @@ impl EnvCmd {
         tracing::debug!("export PATH=\"$PATH:{}\"", pvm.path_string());
         println!("export PATH=\"$PATH:{}\"", pvm.path_string());
 
+        // /// The home directory used to store pcli-related configuration and data.
+        // #[clap(long, default_value_t = default_pcli_home(), env = "PENUMBRA_PCLI_HOME")]
+        // pub pcli_home: Utf8PathBuf,
+        // /// The home directory used to store pclientd-related state and data.
+        // #[clap(long, default_value_t = default_pclientd_home(), env = "PENUMBRA_PCLIENTD_HOME")]
+        // pub pclientd_home: Utf8PathBuf,
+
         Ok(())
     }
 }
