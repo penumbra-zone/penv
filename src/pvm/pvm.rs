@@ -21,7 +21,7 @@ use crate::pvm::release::Release;
 use super::{
     cache::cache::Cache,
     downloader::Downloader,
-    environment::{Environment, Environments},
+    environment::{create_symlink, Environment, Environments},
     release::VersionOrLatest,
 };
 
@@ -488,6 +488,17 @@ impl Pvm {
 
         self.active_environment = Some(environment.clone());
 
+        // Symlink the active environment's bin directory
+        create_symlink(
+            &environment.clone().root_dir.join("bin"),
+            &self.home_dir.join("bin"),
+        )
+        .context("error creating pcli symlink")?;
+
         Ok(environment)
+    }
+
+    pub fn path_string(&self) -> String {
+        self.home_dir.join("bin").to_string()
     }
 }

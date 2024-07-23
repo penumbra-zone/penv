@@ -187,11 +187,11 @@ impl DerefMut for Environments {
     }
 }
 
-fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
+pub fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
     tracing::debug!("creating symlink from {} to {}", target, link);
     let metadata = fs::metadata(target)?;
-    if !metadata.is_file() {
-        return Err(anyhow!("symlink target must be a file"));
+    if !metadata.is_file() && !metadata.is_dir() {
+        return Err(anyhow!("symlink target must be a file or directory"));
     }
 
     let link_metadata = fs::metadata(link);

@@ -20,9 +20,12 @@ impl EnvCmd {
         println!(
             "export PVM_ACTIVE_ENVIRONMENT=\"{}\"",
             pvm.active_environment
+                .clone()
                 .map(|e| e.alias.clone())
                 .unwrap_or_default()
         );
+        tracing::debug!("export PATH=\"$PATH:{}\"", pvm.path_string());
+        println!("export PATH=\"$PATH:{}\"", pvm.path_string());
 
         Ok(())
     }
