@@ -1,0 +1,10 @@
+_pvm_hook() {
+  local previous_exit_status=$?;
+  trap -- '' SIGINT;
+  eval "$("{{ pvm_executable }}" export bash)";
+  trap - SIGINT;
+  return $previous_exit_status;
+};
+if ! [[ "${PROMPT_COMMAND:-}" =~ _pvm_hook ]]; then
+  PROMPT_COMMAND="_pvm_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
