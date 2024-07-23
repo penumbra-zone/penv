@@ -142,7 +142,7 @@ Alias: v0.79.x-localhost
 GRPC URL: http://localhost:26657/
 Version Requirement: ^0.79
 Pinned Version: 0.79.2
-Root Directory: /Users/chrisczub/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost
+Root Directory: /Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost
 Include Node: false
 ```
 
@@ -151,6 +151,16 @@ Additionally, since the hook has been installed to your shell, necessary environ
 ```console
 $ echo $PVM_ACTIVE_ENVIRONMENT
 v0.79.x-localhost
+
+$ echo $PENUMBRA_PCLI_HOME
+/Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-mainnet/pcli
+```
+
+And your `PATH` will be updated to point to the correct binary versions:
+
+```console
+$ pcli --version
+pcli 0.79.2
 ```
 
 ## Security
