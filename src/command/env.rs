@@ -19,7 +19,9 @@ impl EnvCmd {
         match self.shell {
             Shell::Bash => self.print_bash(&pvm),
             Shell::Zsh => self.print_zsh(&pvm),
-            _ => Err(anyhow!("unsupported shell: {:?}", self.shell)),
+            Shell::Unsupported => {
+                return Err(anyhow!("please provide a supported shell: `zsh` or `bash`"))
+            }
         }
     }
 

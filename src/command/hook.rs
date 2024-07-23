@@ -47,7 +47,9 @@ impl HookCmd {
                 let hook = tera::Tera::one_off(hook_template, &context, false)?;
                 println!("{}", hook);
             }
-            Shell::Unsupported => panic!("unsupported shell: {:?}", shell),
+            Shell::Unsupported => {
+                return Err(anyhow!("please provide a supported shell: `zsh` or `bash`"))
+            }
         }
         Ok(())
     }
