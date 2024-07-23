@@ -133,12 +133,28 @@ impl Cache {
         Ok(())
     }
 
-    fn get_version_path(&self, release: &InstallableRelease) -> Utf8PathBuf {
+    pub fn get_version_path(&self, release: &InstallableRelease) -> Utf8PathBuf {
         let mut path = self.home.join("versions");
         path.push(&release.version().to_string());
         path.push("bin");
 
         path
+    }
+
+    pub fn get_pcli_for_version(&self, version: &semver::Version) -> Option<&Utf8PathBuf> {
+        let release = self
+            .data
+            .installed_releases
+            .iter()
+            .find(|r| &r.version == version)?;
+
+        release.assets.iter().find_map(|a| {
+            if a.local_filepath.file_name().unwrap() == "pcli" {
+                Some(&a.local_filepath)
+            } else {
+                None
+            }
+        })
     }
 
     /// Persist the cache information to disk.

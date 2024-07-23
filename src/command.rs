@@ -40,7 +40,7 @@ pub enum Command {
     /// Display information about the active Penumbra environment.
     #[clap(display_order = 600, visible_alias = "w")]
     Which(WhichCmd),
-    /// Output the necessary environment variables to use the active Penumbra environment.
+    /// Output the necessary environment variables to use pvm.
     #[clap(display_order = 700, visible_alias = "e")]
     Env(EnvCmd),
 }

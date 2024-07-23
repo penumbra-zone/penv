@@ -286,6 +286,9 @@ impl Pvm {
             root_dir,
         };
 
+        tracing::debug!("initializing environment");
+        environment.initialize(&cache)?;
+
         tracing::debug!("created environment: {:?}", environment);
 
         // Add a reference to the environment to the app
