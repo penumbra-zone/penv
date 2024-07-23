@@ -7,7 +7,7 @@ use url::Url;
 use super::Binary;
 
 pub(crate) struct PdBinary {
-    pub(crate) grpc_url: Url,
+    pub(crate) pd_join_url: Url,
     pub(crate) root_dir: Utf8PathBuf,
 }
 
@@ -46,7 +46,7 @@ impl Binary for PdBinary {
                 .get("external-address")
                 .context("external-address should be set")?
                 .to_string(),
-            self.grpc_url.to_string(),
+            self.pd_join_url.to_string(),
         ];
         // Execute the pd binary with the given arguments
         tracing::debug!(path=?self.path(), args=?pd_args, "executing pd binary");

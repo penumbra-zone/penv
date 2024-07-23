@@ -59,6 +59,12 @@ pub struct CreateCmd {
     /// If pd configs are also being generated, this should typically be localhost:8080
     #[clap(parse(try_from_str = Url::parse))]
     grpc_url: Url,
+    /// The URL to use for `pd network join` operations, aka the cometBFT RPC endpoint.
+    ///
+    /// Typically this runs on port 26657. If not supplied, this will
+    /// default to the GRPC URL with the port changed to 26657 and HTTP protocol.
+    #[clap(parse(try_from_str = Url::parse))]
+    pd_join_url: Option<Url>,
     /// The GitHub repository to fetch releases from if an installation is necessary.
     ///
     /// Defaults to "penumbra-zone/penumbra"
@@ -116,17 +122,29 @@ impl ManageCmd {
                     ManageTopSubCmd::Create(CreateCmd {
                         environment_alias,
                         penumbra_version,
+                        pd_join_url,
                         grpc_url,
                         repository_name,
                         client_only,
                     }),
             } => {
+                let pd_join_url = match pd_join_url {
+                    Some(url) => url.clone(),
+                    None => {
+                        let mut grpc_url = grpc_url.clone();
+                        grpc_url.set_port(Some(26657)).unwrap();
+                        grpc_url.set_scheme("http").unwrap();
+                        grpc_url
+                    }
+                };
+
                 let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
 
                 let env = pvm.create_environment(
                     environment_alias.clone(),
                     penumbra_version.clone(),
                     grpc_url.clone(),
+                    pd_join_url.clone(),
                     repository_name.clone(),
                     client_only.clone(),
                 )?;
