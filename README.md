@@ -153,7 +153,7 @@ $ echo $PVM_ACTIVE_ENVIRONMENT
 v0.79.x-localhost
 
 $ echo $PENUMBRA_PCLI_HOME
-/Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-mainnet/pcli
+/Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost/pcli
 ```
 
 And your `PATH` will be updated to point to the correct binary versions:
