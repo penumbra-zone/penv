@@ -34,6 +34,8 @@ pub struct Environment {
     // TODO: would be useful to be able to change this for an existing config
     // but requires special pd initialization step
     pub client_only: bool,
+    /// Whether a dev network should be generated or an existing network should be joined.
+    pub generate_network: bool,
 }
 
 impl Display for Environment {
@@ -43,7 +45,8 @@ impl Display for Environment {
         writeln!(f, "Version Requirement: {}", self.version_requirement)?;
         writeln!(f, "Pinned Version: {}", self.pinned_version)?;
         writeln!(f, "Root Directory: {}", self.root_dir)?;
-        writeln!(f, "Include Node: {}", !self.client_only)
+        writeln!(f, "Include Node: {}", !self.client_only)?;
+        writeln!(f, "Generated Dev Network: {}", self.generate_network)
     }
 }
 
@@ -58,12 +61,15 @@ impl Environment {
         fs::create_dir_all(&bin_dir)
             .with_context(|| format!("Failed to create bin directory {}", bin_dir))?;
 
+        // Since the initialization is version-dependent, it is necessary
+        // to shell out to the installed binary to perform the initialization.
+        //
         // Create symlinks for the pinned version of the software stack
         self.create_symlinks(cache)?;
 
+        // If the environment is set to generate a local dev network,
+        // we must initialize that prior to pcli and pclientd.
         // Initialize pcli configuration
-        // Since the initialization is version-dependent, it is necessary
-        // to shell out to the installed binary to perform the initialization.
         let pcli_binary = self.get_pcli_binary();
         let seed_phrase = pcli_binary.initialize(None)?;
         // TODO: lol don't do this
@@ -76,21 +82,25 @@ impl Environment {
         )])))?;
         if !self.client_only {
             let pd_binary = self.get_pd_binary();
-            pd_binary.initialize(Some(HashMap::from([
+            let mut pd_configs = HashMap::from([
                 (
                     "external-address".to_string(),
                     // TODO: make configurable
                     "0.0.0.0:26656".to_string(),
                 ),
                 ("moniker".to_string(), self.alias.to_string()),
-            ])))?;
+            ]);
+
+            if self.generate_network {
+                pd_configs.insert("generate_network".to_string(), "true".to_string());
+            }
+
+            pd_binary.initialize(Some(pd_configs))?;
         }
 
         Ok(())
     }
 
-    // TODO: seems like the various binaries should be made
-    // into instances of some kind of trait
     pub fn pcli_path(&self) -> Utf8PathBuf {
         self.root_dir.join("bin/pcli")
     }

@@ -73,6 +73,13 @@ pub struct CreateCmd {
     /// Disable setting up a fullnode installation.
     #[clap(long)]
     client_only: bool,
+    /// By default, pvm will join an existing network as specified by the [`CreateCmd::pd_join_url`].
+    ///
+    /// By setting this flag, pvm will generate a new dev network instead.
+    ///
+    /// Not used if `client_only` is set.
+    #[clap(long)]
+    generate_network: bool,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -126,6 +133,7 @@ impl ManageCmd {
                         grpc_url,
                         repository_name,
                         client_only,
+                        generate_network,
                     }),
             } => {
                 let pd_join_url = match pd_join_url {
@@ -147,6 +155,7 @@ impl ManageCmd {
                     pd_join_url.clone(),
                     repository_name.clone(),
                     client_only.clone(),
+                    generate_network.clone(),
                 )?;
 
                 println!(

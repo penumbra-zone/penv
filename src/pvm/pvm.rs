@@ -287,6 +287,7 @@ impl Pvm {
         // eventually allow auto-download
         _repository_name: String,
         client_only: bool,
+        generate_network: bool,
     ) -> Result<Arc<Environment>> {
         if self
             .environments
@@ -325,6 +326,7 @@ impl Pvm {
             root_dir,
             client_only,
             pd_join_url,
+            generate_network,
         });
 
         tracing::debug!("initializing environment");
