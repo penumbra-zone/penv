@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context as _, Result};
-use pcli;
+use std::os::unix::fs::symlink as unix_symlink;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
 use std::{
@@ -8,7 +8,6 @@ use std::{
     os::unix::fs::PermissionsExt as _,
     process::Command,
 };
-use std::{io, os::unix::fs::symlink as unix_symlink};
 
 use camino::Utf8PathBuf;
 use semver::{Version, VersionReq};
@@ -29,38 +28,30 @@ pub struct Environment {
     // TODO: include whether there should be a pd config generated as well
 }
 
-impl Environment {
-    /// Initializes an environment on disk, by creating the necessary
-    /// pd/pclientd/pcli configurations and symlinks to the
-    /// pinned version of the software stack.
-    pub fn initialize(&self, cache: &Cache) -> Result<()> {
-        // Create the directory structure for the environment
-        let bin_dir = self.root_dir.join("bin");
-        tracing::debug!("creating bin_dir at {}", bin_dir);
-        fs::create_dir_all(&bin_dir)
-            .with_context(|| format!("Failed to create bin directory {}", bin_dir))?;
+trait Binary {
+    fn path(&self) -> Utf8PathBuf;
+    fn initialize(&self) -> Result<()>;
+}
 
-        // Create symlinks for the pinned version of the software stack
-        create_symlink(
-            cache
-                .get_pcli_for_version(&self.pinned_version)
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "No installed version found for version {}",
-                        self.pinned_version
-                    )
-                })?,
-            &self.pcli_path(),
-        )
-        .context("error creating symlink")?;
+struct PdBinary {}
+struct PcliBinary {
+    pcli_data_dir: Utf8PathBuf,
+    grpc_url: Url,
+    root_dir: Utf8PathBuf,
+}
+struct PclientdBinary {}
 
-        // Initialize pcli configuration
-        // Since the initialization is version-dependent, it is necessary
-        // to shell out to the installed binary to perform the initialization.
+impl Binary for PcliBinary {
+    fn path(&self) -> Utf8PathBuf {
+        // TODO: this should probably only live here
+        self.root_dir.join("bin/pcli")
+    }
+
+    fn initialize(&self) -> Result<()> {
         // TODO: support additional pcli configuration here, e.g. seed phrase, threshold, etc.
         let pcli_args = vec![
             "--home".to_string(),
-            self.pcli_data_dir().to_string(),
+            self.pcli_data_dir.to_string(),
             "init".to_string(),
             "--grpc-url".to_string(),
             self.grpc_url.to_string(),
@@ -68,7 +59,8 @@ impl Environment {
             "generate".to_string(),
         ];
         // Execute the pcli binary with the given arguments
-        let output = Command::new(self.pcli_path()).args(pcli_args).output()?;
+        tracing::debug!(path=?self.path(), args=?pcli_args, "executing pcli binary");
+        let output = Command::new(self.path()).args(pcli_args).output()?;
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
@@ -82,13 +74,131 @@ impl Environment {
 
         Ok(())
     }
+}
 
+// impl Binary for PclientdBinary {
+//     fn path(&self) -> Utf8PathBuf {
+//         // TODO: this should probably only live here
+//         self.root_dir.join("bin/pclientd")
+//     }
+
+//     fn initialize(&self) -> Result<()> {
+//         // TODO: support additional pclientd configuration here, e.g. seed phrase, threshold, etc.
+//         let pclientd_args = vec![
+//             "--home".to_string(),
+//             self.pclientd_data_dir.to_string(),
+//             "init".to_string(),
+//             "--grpc-url".to_string(),
+//             self.grpc_url.to_string(),
+//             "soft-kms".to_string(),
+//             "generate".to_string(),
+//         ];
+//         // Execute the pcli binary with the given arguments
+//         tracing::debug!(path=?self.path(), args=?pcli_args, "executing pclientd binary");
+//         let output = Command::new(self.path()).args(pcli_args).output()?;
+
+//         if output.status.success() {
+//             let stdout = String::from_utf8_lossy(&output.stdout);
+//             // TODO: this will print the seed phrase to logging if that's the command you called
+//             // which is not always great
+//             tracing::debug!(?stdout, "command output");
+//         } else {
+//             let stderr = String::from_utf8_lossy(&output.stderr);
+//             Err(anyhow!("Command failed with error:\n{}", stderr))?;
+//         }
+
+//         Ok(())
+//     }
+// }
+
+impl Environment {
+    /// Initializes an environment on disk, by creating the necessary
+    /// pd/pclientd/pcli configurations and symlinks to the
+    /// pinned version of the software stack.
+    pub fn initialize(&self, cache: &Cache) -> Result<()> {
+        // Create the directory structure for the environment
+        let bin_dir = self.root_dir.join("bin");
+        tracing::debug!("creating bin_dir at {}", bin_dir);
+        fs::create_dir_all(&bin_dir)
+            .with_context(|| format!("Failed to create bin directory {}", bin_dir))?;
+
+        // Create symlinks for the pinned version of the software stack
+        self.create_symlinks(cache)?;
+
+        // Initialize pcli configuration
+        // Since the initialization is version-dependent, it is necessary
+        // to shell out to the installed binary to perform the initialization.
+        let pcli_binary = self.get_pcli_binary();
+        pcli_binary.initialize()?;
+
+        Ok(())
+    }
+
+    // TODO: seems like the various binaries should be made
+    // into instances of some kind of trait
     pub fn pcli_path(&self) -> Utf8PathBuf {
         self.root_dir.join("bin/pcli")
     }
 
+    pub fn get_pcli_binary(&self) -> PcliBinary {
+        PcliBinary {
+            pcli_data_dir: self.pcli_data_dir(),
+            root_dir: self.root_dir.clone(),
+            grpc_url: self.grpc_url.clone(),
+        }
+    }
+
+    pub fn pclientd_path(&self) -> Utf8PathBuf {
+        self.root_dir.join("bin/pclientd")
+    }
+
+    pub fn pd_path(&self) -> Utf8PathBuf {
+        self.root_dir.join("bin/pd")
+    }
+
     pub fn pcli_data_dir(&self) -> Utf8PathBuf {
         self.root_dir.join("pcli")
+    }
+
+    fn create_symlinks(&self, cache: &Cache) -> Result<()> {
+        create_symlink(
+            cache
+                .get_pcli_for_version(&self.pinned_version)
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "No installed pcli version found for version {}",
+                        self.pinned_version
+                    )
+                })?,
+            &self.pcli_path(),
+        )
+        .context("error creating pcli symlink")?;
+        create_symlink(
+            cache
+                .get_pclientd_for_version(&self.pinned_version)
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "No installed pclientd version found for version {}",
+                        self.pinned_version
+                    )
+                })?,
+            &self.pclientd_path(),
+        )
+        .context("error creating pclientd symlink")?;
+        create_symlink(
+            cache
+                .get_pd_for_version(&self.pinned_version)
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "No installed pd version found for version {}",
+                        self.pinned_version
+                    )
+                })?,
+            &self.pd_path(),
+        )
+        .context("error creating pd symlink")?;
+
+        Ok(())
     }
 }
 

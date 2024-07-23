@@ -141,15 +141,42 @@ impl Cache {
         path
     }
 
-    pub fn get_pcli_for_version(&self, version: &semver::Version) -> Option<&Utf8PathBuf> {
-        let release = self
-            .data
+    pub fn get_installed_release(&self, version: &semver::Version) -> Option<&InstalledRelease> {
+        self.data
             .installed_releases
             .iter()
-            .find(|r| &r.version == version)?;
+            .find(|r| &r.version == version)
+    }
+
+    pub fn get_pcli_for_version(&self, version: &semver::Version) -> Option<&Utf8PathBuf> {
+        let release = self.get_installed_release(version)?;
 
         release.assets.iter().find_map(|a| {
             if a.local_filepath.file_name().unwrap() == "pcli" {
+                Some(&a.local_filepath)
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn get_pclientd_for_version(&self, version: &semver::Version) -> Option<&Utf8PathBuf> {
+        let release = self.get_installed_release(version)?;
+
+        release.assets.iter().find_map(|a| {
+            if a.local_filepath.file_name().unwrap() == "pclientd" {
+                Some(&a.local_filepath)
+            } else {
+                None
+            }
+        })
+    }
+
+    pub fn get_pd_for_version(&self, version: &semver::Version) -> Option<&Utf8PathBuf> {
+        let release = self.get_installed_release(version)?;
+
+        release.assets.iter().find_map(|a| {
+            if a.local_filepath.file_name().unwrap() == "pd" {
                 Some(&a.local_filepath)
             } else {
                 None
