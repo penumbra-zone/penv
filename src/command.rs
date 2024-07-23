@@ -1,7 +1,6 @@
 use cache::CacheCmd;
 use env::EnvCmd;
 use install::InstallCmd;
-use list::ListCmd;
 use manage::ManageCmd;
 use use_::UseCmd;
 use which::WhichCmd;
@@ -9,7 +8,6 @@ use which::WhichCmd;
 mod cache;
 mod env;
 mod install;
-mod list;
 mod manage;
 mod use_;
 mod which;
@@ -31,10 +29,8 @@ pub enum Command {
     /// Manage the cache of installed Penumbra versions.
     #[clap(display_order = 300, visible_alias = "c")]
     Cache(CacheCmd),
-    /// List the Penumbra versions available for installation.
-    #[clap(display_order = 400, visible_alias = "ls")]
-    List(ListCmd),
-    /// Manage an installed Penumbra environment, for example to rename or delete it.
+    /// Manage an installed Penumbra environment, for example to create a new one,
+    /// or rename or delete an existing one.
     #[clap(display_order = 500, visible_alias = "m")]
     Manage(ManageCmd),
     /// Display information about the active Penumbra environment.

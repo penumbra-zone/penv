@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context as _, Result};
+use std::fmt::{self, Display};
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
 use std::{collections::HashMap, os::unix::fs::symlink as unix_symlink};
@@ -28,6 +29,16 @@ pub struct Environment {
     pub pinned_version: Version,
     pub root_dir: Utf8PathBuf,
     // TODO: include whether there should be a pd config generated as well
+}
+
+impl Display for Environment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Alias: {}", self.alias)?;
+        writeln!(f, "GRPC URL: {}", self.grpc_url)?;
+        writeln!(f, "Version Requirement: {}", self.version_requirement)?;
+        writeln!(f, "Pinned Version: {}", self.pinned_version)?;
+        writeln!(f, "Root Directory: {}", self.root_dir)
+    }
 }
 
 impl Environment {

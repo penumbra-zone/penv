@@ -3,7 +3,7 @@ use camino::Utf8PathBuf;
 use semver::VersionReq;
 use url::Url;
 
-use crate::pvm::Pvm;
+use crate::pvm::{environment, Pvm};
 
 #[derive(Debug, clap::Parser)]
 pub struct ManageCmd {
@@ -22,9 +22,18 @@ pub enum ManageTopSubCmd {
     /// Rename a configured Penumbra environment.
     #[clap(display_order = 300)]
     Rename(RenameCmd),
+    // Migrate will handle applying migrations between state-breaking versions
     // #[clap(flatten)]
     // Migrate(MigrateSubCmd),
-    // TODO: add support for upgrading pinned version with same SemverReq
+    /// Upgrade a Penumbra environment to use the latest software version matching its semver version requirement.
+    #[clap(display_order = 400)]
+    Upgrade(UpgradeCmd),
+    /// Display information about a specific Penumbra environment.
+    #[clap(display_order = 500)]
+    Info(InfoCmd),
+    /// List all configured Penumbra environments.
+    #[clap(display_order = 600)]
+    List(ListCmd),
 }
 
 // TODO: it would be extremely useful to create an environment that can run
@@ -64,6 +73,14 @@ pub struct DeleteCmd {
 }
 
 #[derive(Debug, Clone, clap::Parser)]
+pub struct ListCmd {
+    /// Display detailed information about each environment instead of just the alias.
+    #[clap(display_order = 100, long)]
+    detailed: bool,
+    // TODO: alias filter, pinned version filter, etc.
+}
+
+#[derive(Debug, Clone, clap::Parser)]
 pub struct RenameCmd {
     /// The alias of the Penumbra environment to be renamed.
     #[clap(display_order = 100)]
@@ -71,6 +88,20 @@ pub struct RenameCmd {
     /// The new alias to rename the Penumbra environment.
     #[clap(display_order = 200)]
     new_alias: String,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct UpgradeCmd {
+    /// The alias of the Penumbra environment to be upgraded.
+    #[clap(display_order = 100)]
+    environment_alias: String,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct InfoCmd {
+    /// The alias of the Penumbra environment to print info about.
+    #[clap(display_order = 100)]
+    environment_alias: String,
 }
 
 impl ManageCmd {
@@ -107,6 +138,35 @@ impl ManageCmd {
                 let mut pvm = Pvm::new(home.clone())?;
 
                 pvm.delete_environment(environment_alias.clone())?;
+
+                Ok(())
+            }
+            ManageCmd {
+                subcmd: ManageTopSubCmd::Info(InfoCmd { environment_alias }),
+            } => {
+                let pvm = Pvm::new(home.clone())?;
+
+                let info = pvm.environment_info(environment_alias.clone())?;
+
+                println!("{}", info);
+
+                Ok(())
+            }
+            ManageCmd {
+                subcmd: ManageTopSubCmd::List(ListCmd { detailed }),
+            } => {
+                let pvm = Pvm::new(home.clone())?;
+
+                let environments = pvm.environments()?;
+
+                println!("Environments:");
+                for environment in environments.iter() {
+                    if *detailed {
+                        println!("{}\n", environment);
+                    } else {
+                        println!("{}", environment.alias);
+                    }
+                }
 
                 Ok(())
             }

@@ -416,4 +416,18 @@ impl Pvm {
 
         Ok(())
     }
+
+    pub fn environment_info(&self, environment_alias: String) -> Result<&Environment> {
+        let environment = self
+            .environments
+            .iter()
+            .find(|e| e.alias == environment_alias)
+            .ok_or_else(|| anyhow!("Environment with alias {} not found", environment_alias))?;
+
+        Ok(environment)
+    }
+
+    pub fn environments(&self) -> Result<&Environments> {
+        Ok(&self.environments)
+    }
 }
