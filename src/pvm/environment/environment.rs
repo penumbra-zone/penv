@@ -29,7 +29,10 @@ pub struct Environment {
     // to the latest matching the version_requirement
     pub pinned_version: Version,
     pub root_dir: Utf8PathBuf,
-    // TODO: include whether there should be a pd config generated as well
+    // whether there should be a pd config generated as well
+    // TODO: would be useful to be able to change this for an existing config
+    // but requires special pd initialization step
+    pub client_only: bool,
 }
 
 impl Display for Environment {
@@ -38,7 +41,8 @@ impl Display for Environment {
         writeln!(f, "GRPC URL: {}", self.grpc_url)?;
         writeln!(f, "Version Requirement: {}", self.version_requirement)?;
         writeln!(f, "Pinned Version: {}", self.pinned_version)?;
-        writeln!(f, "Root Directory: {}", self.root_dir)
+        writeln!(f, "Root Directory: {}", self.root_dir)?;
+        writeln!(f, "Include Node: {}", !self.client_only)
     }
 }
 
@@ -69,15 +73,17 @@ impl Environment {
             "seed_phrase".to_string(),
             seed_phrase,
         )])))?;
-        let pd_binary = self.get_pd_binary();
-        pd_binary.initialize(Some(HashMap::from([
-            (
-                "external-address".to_string(),
-                // TODO: make configurable
-                "0.0.0.0:26656".to_string(),
-            ),
-            ("moniker".to_string(), self.alias.to_string()),
-        ])))?;
+        if !self.client_only {
+            let pd_binary = self.get_pd_binary();
+            pd_binary.initialize(Some(HashMap::from([
+                (
+                    "external-address".to_string(),
+                    // TODO: make configurable
+                    "0.0.0.0:26656".to_string(),
+                ),
+                ("moniker".to_string(), self.alias.to_string()),
+            ])))?;
+        }
 
         Ok(())
     }
@@ -143,18 +149,20 @@ impl Environment {
             &self.pclientd_path(),
         )
         .context("error creating pclientd symlink")?;
-        create_symlink(
-            cache
-                .get_pd_for_version(&self.pinned_version)
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "No installed pd version found for version {}",
-                        self.pinned_version
-                    )
-                })?,
-            &self.pd_path(),
-        )
-        .context("error creating pd symlink")?;
+        if !self.client_only {
+            create_symlink(
+                cache
+                    .get_pd_for_version(&self.pinned_version)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "No installed pd version found for version {}",
+                            self.pinned_version
+                        )
+                    })?,
+                &self.pd_path(),
+            )
+            .context("error creating pd symlink")?;
+        }
 
         Ok(())
     }

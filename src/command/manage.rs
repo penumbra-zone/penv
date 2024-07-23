@@ -63,6 +63,9 @@ pub struct CreateCmd {
     /// Defaults to "penumbra-zone/penumbra"
     #[clap(long, default_value = "penumbra-zone/penumbra")]
     repository_name: String,
+    /// Disable setting up a fullnode installation.
+    #[clap(long)]
+    client_only: bool,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -114,6 +117,7 @@ impl ManageCmd {
                         penumbra_version,
                         grpc_url,
                         repository_name,
+                        client_only,
                     }),
             } => {
                 let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
@@ -123,6 +127,7 @@ impl ManageCmd {
                     penumbra_version.clone(),
                     grpc_url.clone(),
                     repository_name.clone(),
+                    client_only.clone(),
                 )?;
 
                 println!(

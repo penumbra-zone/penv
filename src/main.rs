@@ -26,6 +26,7 @@ async fn main() -> Result<()> {
             ()
         }
         Command::Use(use_cmd) => use_cmd.exec(opt.home).await?,
+        Command::Hook(hook_cmd) => hook_cmd.exec(opt.home).await?,
         Command::Env(env_cmd) => env_cmd.exec(opt.home).await?,
         Command::UnsafeResetAll => {
             // rm the home directory

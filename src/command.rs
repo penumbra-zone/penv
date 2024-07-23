@@ -1,5 +1,6 @@
 use cache::CacheCmd;
 use env::EnvCmd;
+use hook::HookCmd;
 use install::InstallCmd;
 use manage::ManageCmd;
 use use_::UseCmd;
@@ -7,6 +8,7 @@ use which::WhichCmd;
 
 mod cache;
 mod env;
+mod hook;
 mod install;
 mod manage;
 mod use_;
@@ -39,7 +41,10 @@ pub enum Command {
     /// Output the necessary environment variables to use pvm.
     #[clap(display_order = 700, visible_alias = "e")]
     Env(EnvCmd),
+    /// Output the necessary shell script to hook pvm into the active shell.
+    #[clap(display_order = 800, visible_alias = "h")]
+    Hook(HookCmd),
     /// Reset all pvm state.
-    #[clap(display_order = 800)]
+    #[clap(display_order = 900)]
     UnsafeResetAll,
 }

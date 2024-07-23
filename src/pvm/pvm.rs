@@ -278,6 +278,7 @@ impl Pvm {
         grpc_url: Url,
         // eventually allow auto-download
         _repository_name: String,
+        client_only: bool,
     ) -> Result<Arc<Environment>> {
         if self
             .environments
@@ -314,6 +315,7 @@ impl Pvm {
             pinned_version: matching_installed_version.version.clone(),
             grpc_url: grpc_url.clone(),
             root_dir,
+            client_only,
         });
 
         tracing::debug!("initializing environment");
