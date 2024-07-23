@@ -3,10 +3,9 @@ use camino::Utf8PathBuf;
 use flate2::read::GzDecoder;
 use futures::stream::StreamExt;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_LENGTH, USER_AGENT};
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT};
 use reqwest::Client;
 use sha2::{Digest, Sha256};
-use std::io::{self, Read, Write};
 use std::sync::Arc;
 use tar::Archive;
 use tempfile::{tempdir, TempDir};
@@ -47,124 +46,6 @@ impl Downloader {
         let content = response.bytes().await?.to_vec();
 
         Ok(content)
-    }
-
-    pub async fn download(
-        &self,
-        url: String,
-        // TODO: there should be a cli flag to bypass shasum
-        // verification, as it's best to force the user to bypass it
-        // rather than ever doing so implicitly
-        expected_shasum: Option<Vec<u8>>,
-        display_progress: bool,
-    ) -> Result<Vec<Utf8PathBuf>> {
-        println!("downloading archive from {}", url);
-
-        // Get the name of the file from the URL
-        let file_name = url
-            .rsplit('/')
-            .next()
-            .ok_or_else(|| anyhow!("Failed to get file name from URL"))?;
-
-        // Send the GET request and get the response
-        let response = self
-            .client
-            .get(url.clone())
-            .send()
-            .await?
-            .error_for_status()?;
-
-        // Get the content length for the progress bar
-        let total_size = response
-            .headers()
-            .get(CONTENT_LENGTH)
-            .and_then(|ct_len| ct_len.to_str().ok())
-            .and_then(|ct_len| ct_len.parse().ok())
-            .unwrap_or(0);
-
-        let mut pb = if display_progress {
-            let pb = ProgressBar::new(total_size);
-            pb.set_style(
-                ProgressStyle::default_bar()
-                    .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-                    .progress_chars("#>-"),
-            );
-            Some(pb)
-        } else {
-            None
-        };
-
-        // Create a temporary file for the downloaded archive
-        // TODO: we don't want to download to the final location in case the shasum mismatches,
-        // however we could return an in-memory buffer directly instead of a tempfile to save
-        // some filesystem operations
-        let temp_file_path = self.temp_dir.path().join(file_name);
-        let mut temp_file = File::create(&temp_file_path).await?;
-
-        // Create a buffer for reading the response content
-        let mut content = io::Cursor::new(response.bytes().await?);
-
-        // Create a Sha256 hasher
-        let mut hasher = Sha256::new();
-
-        // Write the response content to the temporary file with progress bar
-        let mut buffer = [0; 1024];
-        loop {
-            let bytes_read = content.read(&mut buffer)?;
-            if bytes_read == 0 {
-                break;
-            }
-            temp_file.write_all(&buffer[..bytes_read]).await?;
-            hasher.update(&buffer[..bytes_read]);
-            pb.as_mut().map(|pb| pb.inc(bytes_read as u64));
-        }
-        pb.map(|pb| pb.finish_with_message("Download complete"));
-
-        // Verify the SHA-256 checksum, if available
-        if expected_shasum.is_some() {
-            let expected_shasum = expected_shasum.clone().unwrap();
-            let calculated_hash = hasher.finalize().to_vec();
-
-            if calculated_hash != expected_shasum {
-                return Err(anyhow!(
-                    "SHA-256 checksum mismatch: expected {}, got {}",
-                    hex::encode(expected_shasum),
-                    hex::encode(calculated_hash)
-                ));
-            }
-        } else {
-            tracing::debug!("skipping sha256sum verification, none available");
-        }
-
-        // Reopen the file and create a decompressor
-        let temp_file = File::open(&temp_file_path).await?;
-        let decompressor = GzDecoder::new(
-            temp_file
-                .try_into_std()
-                .map_err(|_| anyhow!("unable to convert tokio::fs::File to std::fs::File"))?,
-        );
-
-        // Create a tar archive from the decompressed content
-        let mut archive = Archive::new(decompressor);
-        // Collect the list of extracted files
-        let mut extracted_files = Vec::new();
-        for entry in archive.entries()? {
-            let mut entry = entry?;
-            let path = entry.path()?.to_path_buf();
-            let full_path = self.temp_dir.path().join(&path);
-
-            // Create parent directories if needed
-            if let Some(parent) = full_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-
-            // Write the entry to disk
-            entry.unpack(&full_path)?;
-
-            extracted_files.push(Utf8PathBuf::try_from(full_path)?);
-        }
-
-        Ok(extracted_files)
     }
 
     pub async fn fetch_releases(&self) -> Result<Vec<Release>> {
@@ -365,7 +246,6 @@ impl Downloader {
         let arc_self = Arc::new(self.clone());
 
         for shasum_url in shasum_urls {
-            let client = self.client.clone();
             let progress_bar = multi_progress.add(ProgressBar::new(0));
             progress_bar.set_style(ProgressStyle::default_bar()
                 .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")

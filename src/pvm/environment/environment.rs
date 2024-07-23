@@ -106,14 +106,6 @@ impl Environment {
         self.root_dir.join("bin/pd")
     }
 
-    pub fn pcli_data_dir(&self) -> Utf8PathBuf {
-        self.root_dir.join("pcli")
-    }
-
-    pub fn pclientd_data_dir(&self) -> Utf8PathBuf {
-        self.root_dir.join("pclientd")
-    }
-
     fn create_symlinks(&self, cache: &Cache) -> Result<()> {
         create_symlink(
             cache

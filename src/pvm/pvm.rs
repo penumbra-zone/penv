@@ -247,7 +247,8 @@ impl Pvm {
         environment_alias: String,
         penumbra_version: VersionReq,
         grpc_url: Url,
-        repository_name: String,
+        // eventually allow auto-download
+        _repository_name: String,
     ) -> Result<Environment> {
         if self
             .environments
