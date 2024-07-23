@@ -501,4 +501,36 @@ impl Pvm {
     pub fn path_string(&self) -> String {
         self.home_dir.join("bin").to_string()
     }
+
+    pub fn pcli_home(&self) -> Option<Utf8PathBuf> {
+        if let Some(environment) = &self.active_environment {
+            Some(environment.root_dir.join("pcli"))
+        } else {
+            None
+        }
+    }
+
+    pub fn pclientd_home(&self) -> Option<Utf8PathBuf> {
+        if let Some(environment) = &self.active_environment {
+            Some(environment.root_dir.join("pclientd"))
+        } else {
+            None
+        }
+    }
+
+    pub fn pd_home(&self) -> Option<Utf8PathBuf> {
+        if let Some(environment) = &self.active_environment {
+            // TODO: this isn't quite right if you want an environment with more
+            // than one node configured
+            Some(
+                environment
+                    .root_dir
+                    .join("network_data")
+                    .join("node0")
+                    .join("pd"),
+            )
+        } else {
+            None
+        }
+    }
 }

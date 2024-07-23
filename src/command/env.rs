@@ -24,15 +24,21 @@ impl EnvCmd {
                 .map(|e| e.alias.clone())
                 .unwrap_or_default()
         );
-        tracing::debug!("export PATH=\"$PATH:{}\"", pvm.path_string());
-        println!("export PATH=\"$PATH:{}\"", pvm.path_string());
+        println!("export PATH=\"{}:$PATH\"", pvm.path_string());
 
-        // /// The home directory used to store pcli-related configuration and data.
-        // #[clap(long, default_value_t = default_pcli_home(), env = "PENUMBRA_PCLI_HOME")]
-        // pub pcli_home: Utf8PathBuf,
-        // /// The home directory used to store pclientd-related state and data.
-        // #[clap(long, default_value_t = default_pclientd_home(), env = "PENUMBRA_PCLIENTD_HOME")]
-        // pub pclientd_home: Utf8PathBuf,
+        if let Some(pcli_home) = pvm.pcli_home() {
+            println!("export PENUMBRA_PCLI_HOME=\"{}\"", pcli_home);
+        }
+        if let Some(pclientd_home) = pvm.pcli_home() {
+            println!("export PENUMBRA_PCLIENTD_HOME=\"{}\"", pclientd_home);
+        }
+        if let Some(active_environment) = &pvm.active_environment {
+            if !active_environment.client_only {
+                if let Some(pd_home) = pvm.pd_home() {
+                    println!("export PENUMBRA_PD_HOME=\"{}\"", pd_home);
+                }
+            }
+        }
 
         Ok(())
     }
