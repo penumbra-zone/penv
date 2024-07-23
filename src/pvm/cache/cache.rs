@@ -75,7 +75,7 @@ impl Cache {
         matching_versions.iter().max_by_key(|r| &r.version).copied()
     }
 
-    pub fn install_release(&mut self, release: &InstallableRelease) -> Result<()> {
+    pub(crate) fn install_release(&mut self, release: &InstallableRelease) -> Result<()> {
         // Identify the paths within the cache to which the release's downloaded assets (currently
         // stored in a temporary directory) should be copied to.
         let version_path = self.get_version_path(release);
@@ -158,7 +158,7 @@ impl Cache {
         Ok(())
     }
 
-    pub fn get_version_path(&self, release: &InstallableRelease) -> Utf8PathBuf {
+    fn get_version_path(&self, release: &InstallableRelease) -> Utf8PathBuf {
         let mut path = self.home.join("versions");
         path.push(&release.version().to_string());
 
@@ -227,7 +227,7 @@ impl Cache {
     }
 
     /// Returns all available versions and whether they're installed, optionally matching a given semver version requirement.
-    pub async fn list_available(
+    pub(crate) async fn list_available(
         &self,
         required_version: Option<&semver::VersionReq>,
         downloader: &Downloader,

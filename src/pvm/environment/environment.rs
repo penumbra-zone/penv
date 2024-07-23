@@ -94,7 +94,7 @@ impl Environment {
         self.root_dir.join("bin/pcli")
     }
 
-    pub fn get_pcli_binary(&self) -> PcliBinary {
+    fn get_pcli_binary(&self) -> PcliBinary {
         PcliBinary {
             root_dir: self.root_dir.clone(),
             grpc_url: self.grpc_url.clone(),
@@ -102,14 +102,14 @@ impl Environment {
     }
 
     // TODO: just store these on the environment struct
-    pub fn get_pclientd_binary(&self) -> PclientdBinary {
+    fn get_pclientd_binary(&self) -> PclientdBinary {
         PclientdBinary {
             root_dir: self.root_dir.clone(),
             grpc_url: self.grpc_url.clone(),
         }
     }
 
-    pub fn get_pd_binary(&self) -> PdBinary {
+    fn get_pd_binary(&self) -> PdBinary {
         PdBinary {
             root_dir: self.root_dir.clone(),
             grpc_url: self.grpc_url.clone(),

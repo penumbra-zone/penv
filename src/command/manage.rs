@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 use colored::Colorize;
-use colored::*;
 use semver::VersionReq;
 use url::Url;
 

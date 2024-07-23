@@ -3,8 +3,6 @@ use std::env;
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 
-use crate::pvm::Pvm;
-
 #[derive(Debug, clap::Parser)]
 pub struct HookCmd {
     /// The shell to output hook scripts for.
@@ -13,7 +11,7 @@ pub struct HookCmd {
 }
 
 impl HookCmd {
-    pub async fn exec(&self, home: Utf8PathBuf) -> Result<()> {
+    pub async fn exec(&self, _home: Utf8PathBuf) -> Result<()> {
         if self.shell != "zsh" {
             anyhow::bail!("unsupported shell: {}", self.shell);
         }

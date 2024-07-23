@@ -31,7 +31,7 @@ use super::{
 /// operations.
 pub struct Pvm {
     pub cache: Cache,
-    pub downloader: Downloader,
+    pub(crate) downloader: Downloader,
     pub environments: Environments,
     pub repository_name: String,
     pub home_dir: Utf8PathBuf,

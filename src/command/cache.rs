@@ -2,7 +2,6 @@ use anyhow::Result;
 use camino::Utf8PathBuf;
 // TODO: better handle colorized text with flags
 use colored::Colorize;
-use colored::*;
 use semver::{Version, VersionReq};
 
 #[derive(Debug, clap::Parser)]
