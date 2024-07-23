@@ -6,7 +6,6 @@ use std::{
     fs,
     ops::{Deref, DerefMut},
     os::unix::fs::PermissionsExt as _,
-    process::Command,
 };
 
 use camino::Utf8PathBuf;
