@@ -13,16 +13,18 @@ use serde::{
     ser::SerializeStruct as _,
     Deserialize, Deserializer, Serialize, Serializer,
 };
+use sha2::Digest;
+use sha2::Sha256;
 use target_lexicon::Triple;
 use url::Url;
 
-use crate::pvm::release::Release;
+use crate::pvm::{downloader::git::clone_repo, release::Release};
 
 use super::{
     cache::cache::Cache,
     downloader::Downloader,
     environment::{create_symlink, Environment, Environments},
-    release::VersionOrLatest,
+    release::{RepoOrVersion, VersionOrLatest},
 };
 
 /// The top-level type for the Penumbra Version Manager.
@@ -354,7 +356,7 @@ impl Pvm {
 
     pub async fn install_release(
         &mut self,
-        penumbra_version: VersionOrLatest,
+        penumbra_version: RepoOrVersion,
         target_arch: Triple,
     ) -> Result<()> {
         let downloader = &self.downloader;
@@ -370,38 +372,53 @@ impl Pvm {
 
         // 3b. find all the versions that satisfy the semver requirement
         'outer: for release in releases {
-            if penumbra_version.matches(&release.version, &latest_version) {
-                let release_name = release.name.clone();
-                tracing::debug!("found candidate release {}", release_name);
-                let enriched_release: Release = match release.try_into() {
-                    Ok(enriched_release) => enriched_release,
-                    Err(e) => {
-                        tracing::debug!(
+            match penumbra_version {
+                RepoOrVersion::Repo(_) => {
+                    let target_repo_dir =
+                        hex::encode(Sha256::digest(&penumbra_version.to_string().as_bytes()));
+                    clone_repo(
+                        &penumbra_version.to_string(),
+                        self.home_dir
+                            .join("checkouts")
+                            .join(target_repo_dir)
+                            .as_str(),
+                    )?;
+                }
+                RepoOrVersion::VersionOrLatest(ref penumbra_version) => {
+                    if penumbra_version.matches(&release.version, &latest_version) {
+                        let release_name = release.name.clone();
+                        tracing::debug!("found candidate release {}", release_name);
+                        let enriched_release: Release = match release.try_into() {
+                            Ok(enriched_release) => enriched_release,
+                            Err(e) => {
+                                tracing::debug!(
                             "failed to enrich release {}, not making an install candidate: {}",
                             release_name,
                             e
                         );
-                        continue;
-                    }
-                };
+                                continue;
+                            }
+                        };
 
-                // Typically a release should contain all assets for all architectures,
-                // but if it doesn't, this may produce unexpected failures.
-                //
-                // If the candidate release has no assets for the target architecture, skip it
-                let has_arch_asset = enriched_release.assets.iter().any(|asset| {
-                    asset.target_arch.is_some()
-                        && asset.target_arch.clone().unwrap() == Triple::host()
-                });
-                if !has_arch_asset {
-                    tracing::debug!(
+                        // Typically a release should contain all assets for all architectures,
+                        // but if it doesn't, this may produce unexpected failures.
+                        //
+                        // If the candidate release has no assets for the target architecture, skip it
+                        let has_arch_asset = enriched_release.assets.iter().any(|asset| {
+                            asset.target_arch.is_some()
+                                && asset.target_arch.clone().unwrap() == Triple::host()
+                        });
+                        if !has_arch_asset {
+                            tracing::debug!(
                         "skipping release {} because it has no assets for the target architecture",
                         enriched_release.name
                     );
-                    continue 'outer;
-                }
+                            continue 'outer;
+                        }
 
-                candidate_releases.push(enriched_release);
+                        candidate_releases.push(enriched_release);
+                    }
+                }
             }
         }
 

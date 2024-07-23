@@ -7,7 +7,41 @@ use std::{
 };
 use target_lexicon::Triple;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum RepoOrVersion {
+    VersionOrLatest(VersionOrLatest),
+    Repo(String),
+}
+
+impl FromStr for RepoOrVersion {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Attempt to parse as a VersionOrLatest...
+        let version_or_latest = match VersionOrLatest::from_str(s) {
+            Ok(version_or_latest) => Some(version_or_latest),
+            Err(_) => None,
+        };
+
+        if let Some(version_or_latest) = version_or_latest {
+            return Ok(Self::VersionOrLatest(version_or_latest));
+        }
+
+        // ...otherwise, treat as a repository path on disk or URL
+        return Ok(Self::Repo(s.to_string()));
+    }
+}
+
+impl Display for RepoOrVersion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RepoOrVersion::Repo(repo) => write!(f, "{}", repo),
+            RepoOrVersion::VersionOrLatest(version_or_latest) => write!(f, "{}", version_or_latest),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VersionOrLatest {
     Latest,
     VersionReq(VersionReq),
