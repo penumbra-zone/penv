@@ -7,9 +7,14 @@ use url::Url;
 use super::Binary;
 
 pub(crate) struct PclientdBinary {
-    pub(crate) pclientd_data_dir: Utf8PathBuf,
     pub(crate) grpc_url: Url,
     pub(crate) root_dir: Utf8PathBuf,
+}
+
+impl PclientdBinary {
+    fn pclientd_data_dir(&self) -> Utf8PathBuf {
+        self.root_dir.join("pclientd")
+    }
 }
 
 impl Binary for PclientdBinary {
@@ -22,7 +27,7 @@ impl Binary for PclientdBinary {
         // TODO: support additional pclientd configuration here, e.g. seed phrase, threshold, etc.
         let pclientd_args = vec![
             "--home".to_string(),
-            self.pclientd_data_dir.to_string(),
+            self.pclientd_data_dir().to_string(),
             "init".to_string(),
             "--grpc-url".to_string(),
             self.grpc_url.to_string(),

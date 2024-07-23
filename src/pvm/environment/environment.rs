@@ -17,7 +17,7 @@ use url::Url;
 use crate::pvm::cache::cache::Cache;
 use crate::pvm::environment::Binary as _;
 
-use super::{PcliBinary, PclientdBinary};
+use super::{PcliBinary, PclientdBinary, PdBinary};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Environment {
@@ -58,6 +58,15 @@ impl Environment {
             "seed_phrase".to_string(),
             seed_phrase,
         )])))?;
+        let pd_binary = self.get_pd_binary();
+        pd_binary.initialize(Some(HashMap::from([
+            (
+                "external-address".to_string(),
+                // TODO: make configurable
+                "0.0.0.0:26656".to_string(),
+            ),
+            ("moniker".to_string(), self.alias.to_string()),
+        ])))?;
 
         Ok(())
     }
@@ -70,15 +79,21 @@ impl Environment {
 
     pub fn get_pcli_binary(&self) -> PcliBinary {
         PcliBinary {
-            pcli_data_dir: self.pcli_data_dir(),
             root_dir: self.root_dir.clone(),
             grpc_url: self.grpc_url.clone(),
         }
     }
 
+    // TODO: just store these on the environment struct
     pub fn get_pclientd_binary(&self) -> PclientdBinary {
         PclientdBinary {
-            pclientd_data_dir: self.pclientd_data_dir(),
+            root_dir: self.root_dir.clone(),
+            grpc_url: self.grpc_url.clone(),
+        }
+    }
+
+    pub fn get_pd_binary(&self) -> PdBinary {
+        PdBinary {
             root_dir: self.root_dir.clone(),
             grpc_url: self.grpc_url.clone(),
         }

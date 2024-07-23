@@ -8,7 +8,6 @@ use url::Url;
 use super::Binary;
 
 pub(crate) struct PcliBinary {
-    pub(crate) pcli_data_dir: Utf8PathBuf,
     pub(crate) grpc_url: Url,
     pub(crate) root_dir: Utf8PathBuf,
 }
@@ -26,9 +25,14 @@ fn extract_seed_phrase(input: &str) -> Option<String> {
     None
 }
 
+impl PcliBinary {
+    fn pcli_data_dir(&self) -> Utf8PathBuf {
+        self.root_dir.join("pcli")
+    }
+}
+
 impl Binary for PcliBinary {
     fn path(&self) -> Utf8PathBuf {
-        // TODO: this should probably only live here
         self.root_dir.join("bin/pcli")
     }
 
@@ -36,7 +40,7 @@ impl Binary for PcliBinary {
         // TODO: support additional pcli configuration here, e.g. seed phrase, threshold, etc.
         let pcli_args = vec![
             "--home".to_string(),
-            self.pcli_data_dir.to_string(),
+            self.pcli_data_dir().to_string(),
             "init".to_string(),
             "--grpc-url".to_string(),
             self.grpc_url.to_string(),
