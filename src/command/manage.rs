@@ -3,7 +3,7 @@ use camino::Utf8PathBuf;
 use semver::VersionReq;
 use url::Url;
 
-use crate::pvm::{environment, Pvm};
+use crate::pvm::Pvm;
 
 #[derive(Debug, clap::Parser)]
 pub struct ManageCmd {

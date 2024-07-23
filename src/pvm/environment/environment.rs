@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context as _, Result};
 use std::fmt::{self, Display};
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
+use std::sync::Arc;
 use std::{collections::HashMap, os::unix::fs::symlink as unix_symlink};
 use std::{
     fs,
@@ -161,11 +162,11 @@ impl Environment {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Environments {
-    pub environments: Vec<Environment>,
+    pub environments: Vec<Arc<Environment>>,
 }
 
 impl Deref for Environments {
-    type Target = Vec<Environment>;
+    type Target = Vec<Arc<Environment>>;
 
     fn deref(&self) -> &Self::Target {
         &self.environments

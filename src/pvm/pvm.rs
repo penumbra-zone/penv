@@ -2,6 +2,7 @@ use std::{
     fmt,
     fs::{self, File},
     io::Write as _,
+    sync::Arc,
 };
 
 use anyhow::{anyhow, Context as _, Result};
@@ -34,6 +35,7 @@ pub struct Pvm {
     pub environments: Environments,
     pub repository_name: String,
     pub home_dir: Utf8PathBuf,
+    pub active_environment: Option<Arc<Environment>>,
 }
 
 impl Serialize for Pvm {
@@ -41,9 +43,13 @@ impl Serialize for Pvm {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Pvm", 3)?;
+        let mut state = serializer.serialize_struct("Pvm", 4)?;
         state.serialize_field("repository_name", &self.repository_name)?;
         state.serialize_field("home_dir", &self.home_dir)?;
+        state.serialize_field(
+            "active_environment",
+            &self.active_environment.clone().map(|e| e.alias.clone()),
+        )?;
         state.serialize_field("environments", &self.environments)?;
         state.end()
     }
@@ -58,6 +64,7 @@ impl<'de> Deserialize<'de> for Pvm {
             Environments,
             RepositoryName,
             HomeDir,
+            ActiveEnvironment,
         }
 
         impl<'de> Deserialize<'de> for Field {
@@ -71,7 +78,7 @@ impl<'de> Deserialize<'de> for Pvm {
                     type Value = Field;
 
                     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                        formatter.write_str("`repository_name`, `home_dir`, or `environments`")
+                        formatter.write_str("`repository_name`, `home_dir`, `active_environment`, or `environments`")
                     }
 
                     fn visit_str<E>(self, value: &str) -> Result<Field, E>
@@ -82,6 +89,7 @@ impl<'de> Deserialize<'de> for Pvm {
                             "repository_name" => Ok(Field::RepositoryName),
                             "home_dir" => Ok(Field::HomeDir),
                             "environments" => Ok(Field::Environments),
+                            "active_environment" => Ok(Field::ActiveEnvironment),
                             _ => Err(de::Error::unknown_field(value, FIELDS)),
                         }
                     }
@@ -106,7 +114,8 @@ impl<'de> Deserialize<'de> for Pvm {
             {
                 let mut repository_name: Option<String> = None;
                 let mut home_dir: Option<Utf8PathBuf> = None;
-                let mut environments = None;
+                let mut environments: Option<Environments> = None;
+                let mut active_environment_alias: Option<String> = None;
 
                 while let Some(key) = map.next_key()? {
                     match key {
@@ -128,6 +137,12 @@ impl<'de> Deserialize<'de> for Pvm {
                             }
                             environments = Some(map.next_value()?);
                         }
+                        Field::ActiveEnvironment => {
+                            if active_environment_alias.is_some() {
+                                return Err(de::Error::duplicate_field("active_environment"));
+                            }
+                            active_environment_alias = Some(map.next_value()?);
+                        }
                     }
                 }
 
@@ -136,6 +151,12 @@ impl<'de> Deserialize<'de> for Pvm {
                 let home_dir = home_dir.ok_or_else(|| de::Error::missing_field("home_dir"))?;
                 let environments =
                     environments.ok_or_else(|| de::Error::missing_field("environments"))?;
+                let active_environment = active_environment_alias.and_then(|alias| {
+                    environments
+                        .iter()
+                        .find(|e| e.alias == alias)
+                        .map(|e| e.clone())
+                });
 
                 Ok(Pvm {
                     repository_name: repository_name.clone(),
@@ -143,11 +164,17 @@ impl<'de> Deserialize<'de> for Pvm {
                     environments,
                     cache: Cache::new(home_dir.into()).map_err(de::Error::custom)?,
                     downloader: Downloader::new(repository_name).map_err(de::Error::custom)?,
+                    active_environment,
                 })
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["repository_name", "home_dir", "environments"];
+        const FIELDS: &'static [&'static str] = &[
+            "repository_name",
+            "home_dir",
+            "environments",
+            "active_environment",
+        ];
         deserializer.deserialize_struct("Pvm", FIELDS, PvmVisitor)
     }
 }
@@ -169,6 +196,7 @@ impl Pvm {
                 // TODO: shouldn't be hardcoded here
                 repository_name: "penumbra-zone/penumbra".to_string(),
                 home_dir: home,
+                active_environment: None,
             }
         } else {
             let pvm_contents = fs::read_to_string(pvm_path)?;
@@ -194,6 +222,7 @@ impl Pvm {
                 },
                 repository_name,
                 home_dir: home.clone(),
+                active_environment: None,
             }
         } else {
             let pvm_contents = fs::read_to_string(pvm_path)?;
@@ -249,7 +278,7 @@ impl Pvm {
         grpc_url: Url,
         // eventually allow auto-download
         _repository_name: String,
-    ) -> Result<Environment> {
+    ) -> Result<Arc<Environment>> {
         if self
             .environments
             .iter()
@@ -279,13 +308,13 @@ impl Pvm {
             .join("environments")
             .join(environment_alias.clone());
 
-        let environment = Environment {
+        let environment = Arc::new(Environment {
             alias: environment_alias.clone(),
             version_requirement: penumbra_version.clone(),
             pinned_version: matching_installed_version.version.clone(),
             grpc_url: grpc_url.clone(),
             root_dir,
-        };
+        });
 
         tracing::debug!("initializing environment");
         environment.initialize(&cache)?;
@@ -429,5 +458,17 @@ impl Pvm {
 
     pub fn environments(&self) -> Result<&Environments> {
         Ok(&self.environments)
+    }
+
+    pub fn activate(&mut self, environment_alias: String) -> Result<&Environment> {
+        let environment = self
+            .environments
+            .iter()
+            .find(|e| e.alias == environment_alias)
+            .ok_or_else(|| anyhow!("Environment with alias {} not found", environment_alias))?;
+
+        self.active_environment = Some(environment.clone());
+
+        Ok(environment)
     }
 }
