@@ -1,5 +1,8 @@
 use anyhow::Result;
 use camino::Utf8PathBuf;
+// TODO: better handle colorized text with flags
+use colored::Colorize;
+use colored::*;
 use semver::{Version, VersionReq};
 
 #[derive(Debug, clap::Parser)]
@@ -14,13 +17,22 @@ pub enum CacheTopSubCmd {
     List(ListCmd),
     #[clap(display_order = 200)]
     Delete(DeleteCmd),
-    /// Completely reset the cache, removing all installed versions.
+    /// List all versions available from the repository.
     #[clap(display_order = 300)]
+    Available(AvailableCmd),
+    /// Completely reset the cache, removing all installed versions.
+    #[clap(display_order = 400)]
     Reset,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct ListCmd {
+    /// Only list versions matching the given semver version requirement.
+    required_version: Option<VersionReq>,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct AvailableCmd {
     /// Only list versions matching the given semver version requirement.
     required_version: Option<VersionReq>,
 }
@@ -63,6 +75,20 @@ impl CacheCmd {
 
                 pvm.cache.delete(version)?;
                 pvm.cache.persist()?;
+                Ok(())
+            }
+            CacheCmd {
+                subcmd: CacheTopSubCmd::Available(AvailableCmd { required_version }),
+            } => {
+                let pvm = crate::pvm::Pvm::new(home.clone())?;
+                let releases = pvm.list_available(required_version.as_ref()).await?;
+                for (release, installed) in releases {
+                    if installed {
+                        println!("{}", release.version.to_string().green());
+                    } else {
+                        println!("{}", release.version.to_string().red());
+                    }
+                }
                 Ok(())
             }
             CacheCmd {

@@ -4697,6 +4697,7 @@ dependencies = [
  "anyhow",
  "camino",
  "clap",
+ "colored",
  "directories",
  "flate2",
  "futures",

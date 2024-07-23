@@ -8,7 +8,10 @@ use camino::Utf8PathBuf;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
-use crate::pvm::release::{InstallableRelease, InstalledAsset, InstalledRelease};
+use crate::pvm::{
+    downloader::Downloader,
+    release::{InstallableRelease, InstalledAsset, InstalledRelease, Release},
+};
 
 /// The Cache is responsible for maintaining a directory of all installed software versions.
 #[derive(Debug)]
@@ -221,6 +224,38 @@ impl Cache {
 
     pub fn config_file_path(&self) -> Utf8PathBuf {
         self.home.join("cache.toml")
+    }
+
+    /// Returns all available versions and whether they're installed, optionally matching a given semver version requirement.
+    pub async fn list_available(
+        &self,
+        required_version: Option<&semver::VersionReq>,
+        downloader: &Downloader,
+    ) -> Result<Vec<(Release, bool)>> {
+        let mut available_releases = downloader.fetch_releases().await?;
+
+        // Only retain the releases that match the version requirement
+        available_releases = available_releases
+            .into_iter()
+            .filter(|r| {
+                if let Some(required_version) = required_version {
+                    required_version.matches(&r.version)
+                } else {
+                    true
+                }
+            })
+            .collect();
+
+        // Mark each release as installed or not
+        let return_releases = available_releases
+            .into_iter()
+            .map(|r| {
+                let installed = self.get_installed_release(&r.version).is_some();
+                (r, installed)
+            })
+            .collect();
+
+        Ok(return_releases)
     }
 
     /// Returns all installed versions, optionally matching a given semver version requirement.

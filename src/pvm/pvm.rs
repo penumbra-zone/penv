@@ -253,6 +253,13 @@ impl Pvm {
             .find(|e| e.alias == environment_alias)
             .unwrap();
 
+        if self.active_environment == Some(environment.clone()) {
+            return Err(anyhow!(
+                "refusing to delete active environment {}; perhaps you mean to `pvm deactivate` first",
+                environment_alias
+            ));
+        }
+
         // Remove the environment from disk
         let env_path = &environment.root_dir;
         if env_path.exists() {
@@ -329,6 +336,16 @@ impl Pvm {
         self.persist()?;
 
         Ok(environment)
+    }
+
+    /// Returns all available versions and whether they're installed, optionally matching a given semver version requirement.
+    pub async fn list_available(
+        &self,
+        required_version: Option<&semver::VersionReq>,
+    ) -> Result<Vec<(Release, bool)>> {
+        self.cache
+            .list_available(required_version, &self.downloader)
+            .await
     }
 
     pub async fn install_release(

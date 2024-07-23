@@ -8,6 +8,8 @@ pub mod command;
 pub mod opt;
 mod pvm;
 
+pub use pvm::Pvm;
+
 pub fn default_home() -> Utf8PathBuf {
     let path = ProjectDirs::from("zone", "penumbra", "pvm")
         .expect("Failed to get platform data dir")

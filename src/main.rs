@@ -5,6 +5,7 @@ use std::fs;
 use anyhow::{Context as _, Result};
 use clap::Parser;
 
+use pvm::Pvm;
 use pvm::{command::Command, opt::Opt};
 
 #[tokio::main]
@@ -28,12 +29,19 @@ async fn main() -> Result<()> {
         Command::Use(use_cmd) => use_cmd.exec(opt.home).await?,
         Command::Hook(hook_cmd) => hook_cmd.exec(opt.home).await?,
         Command::Env(env_cmd) => env_cmd.exec(opt.home).await?,
+        Command::Which(which_cmd) => which_cmd.exec(opt.home).await?,
         Command::UnsafeResetAll => {
             // rm the home directory
             println!("removing directory {}", opt.home);
             std::fs::remove_dir_all(&opt.home)?;
         }
-        _ => unimplemented!("not implemented yet :("),
+        Command::Deactivate => {
+            println!("deactivating active environment...");
+            let mut pvm = Pvm::new(opt.home.clone())?;
+            pvm.active_environment = None;
+            pvm.persist()?;
+            println!("deactivated");
+        }
     }
 
     Ok(())

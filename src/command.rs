@@ -44,7 +44,10 @@ pub enum Command {
     /// Output the necessary shell script to hook pvm into the active shell.
     #[clap(display_order = 800, visible_alias = "h")]
     Hook(HookCmd),
+    /// Unset the currently active environment.
+    #[clap(display_order = 900, visible_alias = "d")]
+    Deactivate,
     /// Reset all pvm state.
-    #[clap(display_order = 900)]
+    #[clap(display_order = 950)]
     UnsafeResetAll,
 }

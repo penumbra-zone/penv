@@ -1,5 +1,7 @@
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
+use colored::Colorize;
+use colored::*;
 use semver::VersionReq;
 use url::Url;
 
@@ -163,13 +165,28 @@ impl ManageCmd {
                 let pvm = Pvm::new(home.clone())?;
 
                 let environments = pvm.environments()?;
+                let active_environment = pvm.active_environment.clone();
 
                 println!("Environments:");
                 for environment in environments.iter() {
                     if *detailed {
-                        println!("{}\n", environment);
+                        if active_environment
+                            .clone()
+                            .is_some_and(|e| e.alias == environment.alias)
+                        {
+                            print!("{}", format!("{}Active: true\n\n", environment).green());
+                        } else {
+                            print!("{}", format!("{}Active: false\n\n", environment).red());
+                        }
                     } else {
-                        println!("{}", environment.alias);
+                        if active_environment
+                            .clone()
+                            .is_some_and(|e| e.alias == environment.alias)
+                        {
+                            print!("{}", format!("{} (active)\n\n", environment.alias).green());
+                        } else {
+                            print!("{}", format!("{}\n\n", environment.alias).red());
+                        }
                     }
                 }
 
