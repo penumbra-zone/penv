@@ -1,6 +1,8 @@
 use crate::default_home as default_pvm_home;
 use camino::Utf8PathBuf;
 use clap::Parser;
+// TODO: having to compile the world of penumnbra just to get these
+// is annoying, maybe we can do something with a feature flag or just hardcode them
 use pcli::default_home as default_pcli_home;
 use pclientd::default_home as default_pclientd_home;
 use std::io::IsTerminal as _;

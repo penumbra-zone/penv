@@ -175,7 +175,7 @@ impl Pvm {
             toml::from_str(&pvm_contents)?
         };
 
-        tracing::debug!(environments=?pvm.environments, "created pvm with environments");
+        tracing::debug!(environments=?pvm.environments, installed_releases=?pvm.cache.data.installed_releases, "created pvm with environments");
         Ok(pvm)
     }
 
@@ -200,7 +200,7 @@ impl Pvm {
             toml::from_str(&pvm_contents)?
         };
 
-        tracing::debug!(environments = ?pvm.environments, "created pvm with environments");
+        tracing::debug!(environments=?pvm.environments, installed_releases=?pvm.cache.data.installed_releases, "created pvm with environments");
         Ok(pvm)
     }
 
@@ -378,8 +378,9 @@ impl Pvm {
             "downloading latest matching release: {}",
             latest_release.version
         );
-        let installable_release =
-            downloader.download_release(latest_release, format!("{}", target_arch))?;
+        let installable_release = downloader
+            .download_release(latest_release, format!("{}", target_arch))
+            .await?;
         tracing::debug!("installable release prepared: {:?}", installable_release);
 
         // 5. attempt to install to the cache

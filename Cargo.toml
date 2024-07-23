@@ -9,12 +9,13 @@ camino                           = { version = "1", features = ["serde1"] }
 clap                             = { version = "3.2", features = ["derive", "env"] }
 directories                      = { version = "4.0.1" }
 flate2 = "1.0"
+futures = "0.3"
 hex = "0.4.3"
 indicatif = "0.16"
-pcli                             = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "pvm_spike", default-features = false }
-pclientd                         = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "pvm_spike", default-features = false }
+pcli                             = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "main", default-features = false }
+pclientd                         = { git = "https://github.com/penumbra-zone/penumbra.git", branch = "main", default-features = false }
 regex                            = { version = "1.5" }
-reqwest                          = { version = "0.11", features = ["blocking", "json"] }
+reqwest                          = { version = "0.11", features = ["stream", "json"] }
 semver                           = { version = "1.0", features = ["serde"] }
 serde                            = { version = "1.0", features = ["derive"] }
 serde_json                       = { version = "1.0" }
@@ -24,6 +25,8 @@ tar                              = "0.4"
 target-lexicon                   = { version = "0.12", features = ["serde_support"] }
 tempfile                         = "3.3"
 tokio                            = { version = "1.3", features = ["full"] }
+tokio-stream                     = { version = "0.1.8" }
+tokio-util                       = { version = "0.7" }
 toml = "0.5"
 tracing                          = { version = "0.1" }
 tracing-subscriber               = { version = "0.3.17", features = ["env-filter"] }

@@ -47,8 +47,22 @@ impl CacheCmd {
             CacheCmd {
                 subcmd: CacheTopSubCmd::Delete(DeleteCmd { version }),
             } => {
-                let cache = crate::pvm::cache::cache::Cache::new(home);
-                // cache.delete(version).await?;
+                // don't allow deletion if environment uses this version
+                let mut pvm = crate::pvm::Pvm::new(home.clone())?;
+                if let Some(env) = pvm
+                    .environments
+                    .iter()
+                    .find(|e| e.pinned_version == *version)
+                {
+                    return Err(anyhow::anyhow!(
+                        "Cannot delete version {} because it is pinned by environment {}",
+                        version,
+                        env.alias
+                    ));
+                }
+
+                pvm.cache.delete(version)?;
+                pvm.cache.persist()?;
                 Ok(())
             }
             CacheCmd {

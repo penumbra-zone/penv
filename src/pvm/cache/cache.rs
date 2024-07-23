@@ -3,8 +3,9 @@ use std::{
     io::Write as _,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use camino::Utf8PathBuf;
+use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use crate::pvm::release::{InstallableRelease, InstalledAsset, InstalledRelease};
@@ -40,6 +41,25 @@ impl Cache {
         Ok(Self { home, data })
     }
 
+    pub fn delete(&mut self, version: &Version) -> Result<()> {
+        let installed_version = self
+            .get_installed_release(version)
+            .ok_or_else(|| anyhow::anyhow!("No installed version found for version {}", version))?;
+
+        let installed_version_dir = &installed_version.root_dir;
+        if installed_version_dir.exists() {
+            tracing::debug!("deleting version directory: {}", installed_version_dir);
+            std::fs::remove_dir_all(&installed_version_dir)
+                .context("error removing version directory")?;
+        }
+
+        self.data
+            .installed_releases
+            .retain(|r| r.version != *version);
+
+        Ok(())
+    }
+
     pub fn find_best_match(
         &self,
         required_version: &semver::VersionReq,
@@ -56,68 +76,70 @@ impl Cache {
         // Identify the paths within the cache to which the release's downloaded assets (currently
         // stored in a temporary directory) should be copied to.
         let version_path = self.get_version_path(release);
+        let version_bin_path = version_path.join("bin");
 
-        tracing::debug!("creating version path: {}", version_path);
-        fs::create_dir_all(&version_path)
-            .with_context(|| format!("Failed to create version path directory {}", version_path))?;
+        tracing::debug!("creating version bin path: {}", version_path);
+        fs::create_dir_all(&version_bin_path).with_context(|| {
+            format!(
+                "Failed to create version bin path directory {}",
+                version_path
+            )
+        })?;
 
         let mut installed_assets = Vec::new();
 
         // Copy the assets to their target destinations.
         // TODO: reuse code
-        for file in release.pcli.iter().flatten() {
-            let metadata = fs::metadata(file)?;
+        let file = release.pcli.as_ref().expect("expected pcli file");
+        let metadata = fs::metadata(file)?;
 
-            if !metadata.is_file() {
-                continue;
-            }
-
-            let file_path = version_path.join(file.file_name().expect("expected file name"));
-
-            tracing::debug!("copying: {} to {}", file, file_path);
-            fs::copy(file, &file_path)?;
-
-            installed_assets.push(InstalledAsset {
-                target_arch: release.target_arch.clone(),
-                local_filepath: file_path,
-            });
+        if !metadata.is_file() {
+            return Err(anyhow!("missing pcli"));
         }
 
-        for file in release.pd.iter().flatten() {
-            let metadata = fs::metadata(file)?;
+        let file_path = version_bin_path.join(file.file_name().expect("expected file name"));
 
-            if !metadata.is_file() {
-                continue;
-            }
+        tracing::debug!("copying: {} to {}", file, file_path);
+        fs::copy(file, &file_path)?;
 
-            let file_path = version_path.join(file.file_name().expect("expected file name"));
+        installed_assets.push(InstalledAsset {
+            target_arch: release.target_arch.clone(),
+            local_filepath: file_path,
+        });
 
-            tracing::debug!("copying: {} to {}", file, file_path);
-            fs::copy(file, &file_path)?;
+        let file = release.pd.as_ref().expect("expected pd file");
+        let metadata = fs::metadata(file)?;
 
-            installed_assets.push(InstalledAsset {
-                target_arch: release.target_arch.clone(),
-                local_filepath: file_path,
-            });
+        if !metadata.is_file() {
+            return Err(anyhow!("missing pd"));
         }
 
-        for file in release.pclientd.iter().flatten() {
-            let metadata = fs::metadata(file)?;
+        let file_path = version_bin_path.join(file.file_name().expect("expected file name"));
 
-            if !metadata.is_file() {
-                continue;
-            }
+        tracing::debug!("copying: {} to {}", file, file_path);
+        fs::copy(file, &file_path)?;
 
-            let file_path = version_path.join(file.file_name().expect("expected file name"));
+        installed_assets.push(InstalledAsset {
+            target_arch: release.target_arch.clone(),
+            local_filepath: file_path,
+        });
 
-            tracing::debug!("copying: {} to {}", file, file_path);
-            fs::copy(file, &file_path)?;
+        let file = release.pclientd.as_ref().expect("expected pclientd file");
+        let metadata = fs::metadata(file)?;
 
-            installed_assets.push(InstalledAsset {
-                target_arch: release.target_arch.clone(),
-                local_filepath: file_path,
-            });
+        if !metadata.is_file() {
+            return Err(anyhow!("missing pclientd"));
         }
+
+        let file_path = version_bin_path.join(file.file_name().expect("expected file name"));
+
+        tracing::debug!("copying: {} to {}", file, file_path);
+        fs::copy(file, &file_path)?;
+
+        installed_assets.push(InstalledAsset {
+            target_arch: release.target_arch.clone(),
+            local_filepath: file_path,
+        });
 
         // Mark the release as installed in the cache
         // TODO: don't reach in data directly...
@@ -136,7 +158,6 @@ impl Cache {
     pub fn get_version_path(&self, release: &InstallableRelease) -> Utf8PathBuf {
         let mut path = self.home.join("versions");
         path.push(&release.version().to_string());
-        path.push("bin");
 
         path
     }

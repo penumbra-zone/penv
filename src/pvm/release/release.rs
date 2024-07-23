@@ -250,9 +250,9 @@ impl Ord for Release {
 /// desired architecture.
 #[derive(Debug)]
 pub(crate) struct InstallableRelease {
-    pub(crate) pcli: Option<Vec<Utf8PathBuf>>,
-    pub(crate) pclientd: Option<Vec<Utf8PathBuf>>,
-    pub(crate) pd: Option<Vec<Utf8PathBuf>>,
+    pub(crate) pcli: Option<Utf8PathBuf>,
+    pub(crate) pclientd: Option<Utf8PathBuf>,
+    pub(crate) pd: Option<Utf8PathBuf>,
     pub(crate) target_arch: Triple,
     /// The underlying release information.
     pub(crate) release: Release,
