@@ -211,7 +211,7 @@ impl Pvm {
             .any(|e| e.alias == environment_alias)
         {
             return Err(anyhow!(
-                "Environment with alias {} doesn't exist",
+                "Environment with alias {} does not exist",
                 environment_alias
             ));
         }

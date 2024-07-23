@@ -43,4 +43,7 @@ pub enum Command {
     /// Output the necessary environment variables to use pvm.
     #[clap(display_order = 700, visible_alias = "e")]
     Env(EnvCmd),
+    /// Reset all pvm state.
+    #[clap(display_order = 800)]
+    UnsafeResetAll,
 }

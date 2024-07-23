@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context as _, Result};
-use std::os::unix::fs::symlink as unix_symlink;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
+use std::{collections::HashMap, os::unix::fs::symlink as unix_symlink};
 use std::{
     fs,
     ops::{Deref, DerefMut},
@@ -17,7 +17,7 @@ use url::Url;
 use crate::pvm::cache::cache::Cache;
 use crate::pvm::environment::Binary as _;
 
-use super::PcliBinary;
+use super::{PcliBinary, PclientdBinary};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Environment {
@@ -49,7 +49,15 @@ impl Environment {
         // Since the initialization is version-dependent, it is necessary
         // to shell out to the installed binary to perform the initialization.
         let pcli_binary = self.get_pcli_binary();
-        pcli_binary.initialize()?;
+        let seed_phrase = pcli_binary.initialize(None)?;
+        // TODO: lol don't do this
+        tracing::debug!("seed phrase: {}", seed_phrase);
+        let pclientd_binary = self.get_pclientd_binary();
+        pclientd_binary.initialize(Some(HashMap::from([(
+            // pass the seed phrase here to avoid keeping in memory long-term
+            "seed_phrase".to_string(),
+            seed_phrase,
+        )])))?;
 
         Ok(())
     }
@@ -68,6 +76,14 @@ impl Environment {
         }
     }
 
+    pub fn get_pclientd_binary(&self) -> PclientdBinary {
+        PclientdBinary {
+            pclientd_data_dir: self.pclientd_data_dir(),
+            root_dir: self.root_dir.clone(),
+            grpc_url: self.grpc_url.clone(),
+        }
+    }
+
     pub fn pclientd_path(&self) -> Utf8PathBuf {
         self.root_dir.join("bin/pclientd")
     }
@@ -78,6 +94,10 @@ impl Environment {
 
     pub fn pcli_data_dir(&self) -> Utf8PathBuf {
         self.root_dir.join("pcli")
+    }
+
+    pub fn pclientd_data_dir(&self) -> Utf8PathBuf {
+        self.root_dir.join("pclientd")
     }
 
     fn create_symlinks(&self, cache: &Cache) -> Result<()> {

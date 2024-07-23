@@ -25,6 +25,11 @@ async fn main() -> Result<()> {
             manage_cmd.exec(opt.home).await?;
             ()
         }
+        Command::UnsafeResetAll => {
+            // rm the home directory
+            println!("removing directory {}", opt.home);
+            std::fs::remove_dir_all(&opt.home)?;
+        }
         _ => unimplemented!("not implemented yet :("),
     }
 
