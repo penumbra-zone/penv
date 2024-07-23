@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::pvm::cache::cache::Cache;
+use crate::pvm::environment::Binary as _;
+
+use super::PcliBinary;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Environment {
@@ -27,89 +30,6 @@ pub struct Environment {
     pub root_dir: Utf8PathBuf,
     // TODO: include whether there should be a pd config generated as well
 }
-
-trait Binary {
-    fn path(&self) -> Utf8PathBuf;
-    fn initialize(&self) -> Result<()>;
-}
-
-struct PdBinary {}
-struct PcliBinary {
-    pcli_data_dir: Utf8PathBuf,
-    grpc_url: Url,
-    root_dir: Utf8PathBuf,
-}
-struct PclientdBinary {}
-
-impl Binary for PcliBinary {
-    fn path(&self) -> Utf8PathBuf {
-        // TODO: this should probably only live here
-        self.root_dir.join("bin/pcli")
-    }
-
-    fn initialize(&self) -> Result<()> {
-        // TODO: support additional pcli configuration here, e.g. seed phrase, threshold, etc.
-        let pcli_args = vec![
-            "--home".to_string(),
-            self.pcli_data_dir.to_string(),
-            "init".to_string(),
-            "--grpc-url".to_string(),
-            self.grpc_url.to_string(),
-            "soft-kms".to_string(),
-            "generate".to_string(),
-        ];
-        // Execute the pcli binary with the given arguments
-        tracing::debug!(path=?self.path(), args=?pcli_args, "executing pcli binary");
-        let output = Command::new(self.path()).args(pcli_args).output()?;
-
-        if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            // TODO: this will print the seed phrase to logging if that's the command you called
-            // which is not always great
-            tracing::debug!(?stdout, "command output");
-        } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            Err(anyhow!("Command failed with error:\n{}", stderr))?;
-        }
-
-        Ok(())
-    }
-}
-
-// impl Binary for PclientdBinary {
-//     fn path(&self) -> Utf8PathBuf {
-//         // TODO: this should probably only live here
-//         self.root_dir.join("bin/pclientd")
-//     }
-
-//     fn initialize(&self) -> Result<()> {
-//         // TODO: support additional pclientd configuration here, e.g. seed phrase, threshold, etc.
-//         let pclientd_args = vec![
-//             "--home".to_string(),
-//             self.pclientd_data_dir.to_string(),
-//             "init".to_string(),
-//             "--grpc-url".to_string(),
-//             self.grpc_url.to_string(),
-//             "soft-kms".to_string(),
-//             "generate".to_string(),
-//         ];
-//         // Execute the pcli binary with the given arguments
-//         tracing::debug!(path=?self.path(), args=?pcli_args, "executing pclientd binary");
-//         let output = Command::new(self.path()).args(pcli_args).output()?;
-
-//         if output.status.success() {
-//             let stdout = String::from_utf8_lossy(&output.stdout);
-//             // TODO: this will print the seed phrase to logging if that's the command you called
-//             // which is not always great
-//             tracing::debug!(?stdout, "command output");
-//         } else {
-//             let stderr = String::from_utf8_lossy(&output.stderr);
-//             Err(anyhow!("Command failed with error:\n{}", stderr))?;
-//         }
-
-//         Ok(())
-//     }
-// }
 
 impl Environment {
     /// Initializes an environment on disk, by creating the necessary
