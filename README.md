@@ -163,6 +163,28 @@ $ pcli --version
 pcli 0.79.2
 ```
 
+## Environment Variables
+
+`pvm` sets various environment variables.
+
+For example, to run `cometbft` after activating an environment, you can use the `COMETBFT_HOME` environment variable:
+
+```console
+$ cometbft start --home $COMETBFT_HOME
+```
+
+The entire list of environment variables is:
+
+```
+PVM_ACTIVE_ENVIRONMENT
+PENUMBRA_PCLI_HOME
+PENUMBRA_PCLIENTD_HOME
+PENUMBRA_PD_HOME
+PENUMBRA_PD_COMETBFT_PROXY_URL
+PENUMBRA_PD_JOIN_URL
+COMETBFT_HOME
+```
+
 ## Security
 
 If you believe you've found a security-related issue with pvm,

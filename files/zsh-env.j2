@@ -8,12 +8,18 @@ export PENUMBRA_PCLIENTD_HOME="{{ pclientd_home }}"
 {% endif %}
 {% if pd_home is defined %}
 export PENUMBRA_PD_HOME="{{ pd_home }}"
+export PENUMBRA_PD_COMETBFT_PROXY_URL="{{ pd_cometbft_proxy_url }}"
+export PENUMBRA_PD_JOIN_URL="{{ pd_join_url }}"
+export COMETBFT_HOME="{{ cometbft_home }}"
 {% endif %}
 {% else %}
 unset PVM_ACTIVE_ENVIRONMENT
 unset PENUMBRA_PCLI_HOME
 unset PENUMBRA_PCLIENTD_HOME
 unset PENUMBRA_PD_HOME
+unset PENUMBRA_PD_COMETBFT_PROXY_URL
+unset PENUMBRA_PD_JOIN_URL
+unset COMETBFT_HOME
 {% endif %}
 
 {% if path_add is defined %}

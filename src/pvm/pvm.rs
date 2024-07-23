@@ -283,6 +283,7 @@ impl Pvm {
         environment_alias: String,
         penumbra_version: VersionReq,
         grpc_url: Url,
+        pd_join_url: Url,
         // eventually allow auto-download
         _repository_name: String,
         client_only: bool,
@@ -323,6 +324,7 @@ impl Pvm {
             grpc_url: grpc_url.clone(),
             root_dir,
             client_only,
+            pd_join_url,
         });
 
         tracing::debug!("initializing environment");
@@ -528,6 +530,22 @@ impl Pvm {
                     .join("network_data")
                     .join("node0")
                     .join("pd"),
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn cometbft_home(&self) -> Option<Utf8PathBuf> {
+        if let Some(environment) = &self.active_environment {
+            // TODO: this isn't quite right if you want an environment with more
+            // than one node configured
+            Some(
+                environment
+                    .root_dir
+                    .join("network_data")
+                    .join("node0")
+                    .join("cometbft"),
             )
         } else {
             None

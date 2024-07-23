@@ -29,6 +29,7 @@ pub struct Environment {
     // to the latest matching the version_requirement
     pub pinned_version: Version,
     pub root_dir: Utf8PathBuf,
+    pub pd_join_url: Url,
     // whether there should be a pd config generated as well
     // TODO: would be useful to be able to change this for an existing config
     // but requires special pd initialization step
@@ -112,7 +113,7 @@ impl Environment {
     fn get_pd_binary(&self) -> PdBinary {
         PdBinary {
             root_dir: self.root_dir.clone(),
-            grpc_url: self.grpc_url.clone(),
+            pd_join_url: self.pd_join_url.clone(),
         }
     }
 
