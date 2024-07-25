@@ -3,10 +3,7 @@ use camino::Utf8PathBuf;
 use clap::value_parser;
 use target_lexicon::Triple;
 
-use crate::pvm::{
-    release::{RepoOrVersion, VersionOrLatest},
-    Pvm,
-};
+use crate::pvm::{release::RepoOrVersionReq, Pvm};
 
 // TODO: the cometbft version being used must be matched to the penumbra versions,
 // so it might be desirable to add support for managing cometbft installations here as well.
@@ -33,8 +30,8 @@ pub struct InstallCmd {
     /// - The string "latest", or the version of the Penumbra software suite to install.
     ///
     /// Version requirements are specified as a semver version requirement, i.e. "0.79" will install the latest 0.79.x release.
-    #[clap(value_parser = value_parser!(RepoOrVersion))]
-    penumbra_version: RepoOrVersion,
+    #[clap(value_parser = value_parser!(RepoOrVersionReq))]
+    penumbra_version: RepoOrVersionReq,
 }
 
 impl InstallCmd {

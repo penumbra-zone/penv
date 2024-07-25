@@ -1,8 +1,11 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
+use clap::value_parser;
 // TODO: better handle colorized text with flags
 use colored::Colorize;
-use semver::{Version, VersionReq};
+
+use crate::pvm::environment::EnvironmentTrait;
+use crate::pvm::release::{RepoOrVersion, RepoOrVersionReq};
 
 #[derive(Debug, clap::Parser)]
 pub struct CacheCmd {
@@ -27,19 +30,20 @@ pub enum CacheTopSubCmd {
 #[derive(Debug, Clone, clap::Parser)]
 pub struct ListCmd {
     /// Only list versions matching the given semver version requirement.
-    required_version: Option<VersionReq>,
+    required_version: Option<RepoOrVersionReq>,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct AvailableCmd {
     /// Only list versions matching the given semver version requirement.
-    required_version: Option<VersionReq>,
+    required_version: Option<RepoOrVersionReq>,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct DeleteCmd {
-    /// The version to delete.
-    version: Version,
+    /// The cached installation to delete.
+    #[clap(value_parser = value_parser!(RepoOrVersion))]
+    version: RepoOrVersion,
 }
 
 impl CacheCmd {
@@ -49,7 +53,7 @@ impl CacheCmd {
                 subcmd: CacheTopSubCmd::List(ListCmd { required_version }),
             } => {
                 let cache = crate::pvm::cache::cache::Cache::new(home)?;
-                let versions = cache.list(required_version.as_ref())?;
+                let versions = cache.list_installed(required_version.as_ref())?;
                 for version in versions {
                     println!("{}", version);
                 }
@@ -63,18 +67,26 @@ impl CacheCmd {
                 if let Some(env) = pvm
                     .environments
                     .iter()
-                    .find(|e| e.pinned_version == *version)
+                    .find(|e| (**e).satisfied_by_version(version))
                 {
                     return Err(anyhow::anyhow!(
                         "Cannot delete version {} because it is pinned by environment {}",
                         version,
-                        env.alias
+                        env.metadata().alias
                     ));
                 }
 
-                pvm.cache.delete(version)?;
-                pvm.cache.persist()?;
-                Ok(())
+                let installed_version = pvm.cache.get_installed_release(version);
+
+                match installed_version {
+                    Some(installed_version) => {
+                        // TODO: cloning here is dumb and defeats the point of taking ownership
+                        pvm.cache.delete(installed_version.clone())?;
+                        pvm.cache.persist()?;
+                        Ok(())
+                    }
+                    None => return Err(anyhow!("Version {} is not installed", version)),
+                }
             }
             CacheCmd {
                 subcmd: CacheTopSubCmd::Available(AvailableCmd { required_version }),

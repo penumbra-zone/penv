@@ -1,17 +1,16 @@
 use anyhow::Context as _;
-use anyhow::{Error, Result};
+use anyhow::Result;
+use camino::Utf8PathBuf;
 use gix::clone;
-use gix::open;
-use indicatif::ProgressBar;
-use indicatif::ProgressStyle;
 use std::fs;
-use std::path::Path;
-use std::sync::Arc;
-use tempfile::tempdir;
+
+use crate::pvm::release::git_repo::RepoMetadata;
+use crate::pvm::release::InstallableRelease;
 
 // TODO: expose as method on Downloader...
-pub fn clone_repo(repo_url: &str, dest: &str) -> Result<()> {
-    let repo = if repo_url.starts_with("http") || repo_url.starts_with("git@") {
+pub fn clone_repo(repo_url: &str, dest: &str) -> Result<InstallableRelease> {
+    println!("cloning repo {} to {}", repo_url, dest);
+    let metadata: RepoMetadata = if repo_url.starts_with("http") || repo_url.starts_with("git@") {
         let kind = gix::create::Kind::WithWorktree;
         let create_opts = gix::create::Options::default();
         let open_opts = gix::open::Options::default();
@@ -31,30 +30,36 @@ pub fn clone_repo(repo_url: &str, dest: &str) -> Result<()> {
         );
         let (repo, _) = prepare_checkout
             .main_worktree(gix::progress::Discard, &gix::interrupt::IS_INTERRUPTED)?;
-        println!(
-            "Repo cloned into {:?}",
-            repo.work_dir().expect("directory pre-created")
-        );
+        RepoMetadata {
+            name: repo_url.to_string(),
+            url: repo_url.to_string(),
+            checkout_dir: Utf8PathBuf::from_path_buf(
+                repo.work_dir()
+                    .expect("directory pre-created")
+                    .to_path_buf(),
+            )
+            .expect("ok"),
+        }
 
-        let remote = repo
-            .find_default_remote(gix::remote::Direction::Fetch)
-            .expect("always present after clone")?;
+        // let remote = repo
+        //     .find_default_remote(gix::remote::Direction::Fetch)
+        //     .expect("always present after clone")?;
 
-        println!(
-            "Default remote: {} -> {}",
-            remote
-                .name()
-                .expect("default remote is always named")
-                .as_bstr(),
-            remote
-                .url(gix::remote::Direction::Fetch)
-                .expect("should be the remote URL")
-                .to_bstring(),
-        );
+        // println!(
+        //     "Default remote: {} -> {}",
+        //     remote
+        //         .name()
+        //         .expect("default remote is always named")
+        //         .as_bstr(),
+        //     remote
+        //         .url(gix::remote::Direction::Fetch)
+        //         .expect("should be the remote URL")
+        //         .to_bstring(),
+        // );
     } else {
         // If it's a local path, just use a symlink
-        unimplemented!("local git repo support not implemented yet");
+        unimplemented!("local git repo support not implemented yet")
     };
-    println!("Repository cloned to: {}", dest);
-    Ok(())
+    // println!("Repository cloned to: {}", metadata.root_dir);
+    Ok(InstallableRelease::GitRepo(metadata))
 }

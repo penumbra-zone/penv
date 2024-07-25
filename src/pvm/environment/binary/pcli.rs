@@ -5,7 +5,7 @@ use camino::Utf8PathBuf;
 use regex::Regex;
 use url::Url;
 
-use super::Binary;
+use super::{Binary, ManagedFile};
 
 pub(crate) struct PcliBinary {
     pub(crate) grpc_url: Url,
@@ -31,11 +31,13 @@ impl PcliBinary {
     }
 }
 
-impl Binary for PcliBinary {
+impl ManagedFile for PcliBinary {
     fn path(&self) -> Utf8PathBuf {
         self.root_dir.join("bin/pcli")
     }
+}
 
+impl Binary for PcliBinary {
     fn initialize(&self, _configs: Option<HashMap<String, String>>) -> Result<String> {
         // TODO: support additional pcli configuration here, e.g. seed phrase, threshold, etc.
         let pcli_args = vec![

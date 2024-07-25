@@ -7,7 +7,6 @@ use std::{
 
 use anyhow::{anyhow, Context as _, Result};
 use camino::Utf8PathBuf;
-use semver::VersionReq;
 use serde::{
     de::{self, MapAccess, Visitor},
     ser::SerializeStruct as _,
@@ -18,13 +17,20 @@ use sha2::Sha256;
 use target_lexicon::Triple;
 use url::Url;
 
-use crate::pvm::{downloader::git::clone_repo, release::Release};
+use crate::pvm::{
+    downloader::git::clone_repo,
+    environment::{
+        BinaryEnvironment, CheckoutEnvironment, Environment, EnvironmentMetadata, EnvironmentTrait,
+        ManagedFile,
+    },
+    release::{git_repo::RepoMetadata, InstallableRelease, InstalledRelease, Release},
+};
 
 use super::{
     cache::cache::Cache,
     downloader::Downloader,
-    environment::{create_symlink, Environment, Environments},
-    release::{RepoOrVersion, VersionOrLatest},
+    environment::{create_symlink, Environments},
+    release::RepoOrVersionReq,
 };
 
 /// The top-level type for the Penumbra Version Manager.
@@ -50,7 +56,10 @@ impl Serialize for Pvm {
         state.serialize_field("home_dir", &self.home_dir)?;
         state.serialize_field(
             "active_environment",
-            &self.active_environment.clone().map(|e| e.alias.clone()),
+            &self
+                .active_environment
+                .clone()
+                .map(|e| e.metadata().alias.clone()),
         )?;
         state.serialize_field("environments", &self.environments)?;
         state.end()
@@ -156,7 +165,7 @@ impl<'de> Deserialize<'de> for Pvm {
                 let active_environment = active_environment_alias.and_then(|alias| {
                     environments
                         .iter()
-                        .find(|e| e.alias == alias)
+                        .find(|e| e.metadata().alias == alias)
                         .map(|e| e.clone())
                 });
 
@@ -239,7 +248,7 @@ impl Pvm {
         if !self
             .environments
             .iter()
-            .any(|e| e.alias == environment_alias)
+            .any(|e| e.metadata().alias == environment_alias)
         {
             return Err(anyhow!(
                 "Environment with alias {} does not exist",
@@ -252,7 +261,7 @@ impl Pvm {
         let environment = self
             .environments
             .iter()
-            .find(|e| e.alias == environment_alias)
+            .find(|e| e.metadata().alias == environment_alias)
             .unwrap();
 
         if self.active_environment == Some(environment.clone()) {
@@ -263,14 +272,15 @@ impl Pvm {
         }
 
         // Remove the environment from disk
-        let env_path = &environment.root_dir;
+        let env_path = &environment.metadata().root_dir;
         if env_path.exists() {
             tracing::debug!("removing environment directory: {}", env_path);
             std::fs::remove_dir_all(&env_path)?;
         }
 
         // Remove the environment from the app
-        self.environments.retain(|e| e.alias != environment_alias);
+        self.environments
+            .retain(|e| e.metadata().alias != environment_alias);
 
         // Persist the updated state
         self.persist()?;
@@ -283,7 +293,7 @@ impl Pvm {
     pub fn create_environment(
         &mut self,
         environment_alias: String,
-        penumbra_version: VersionReq,
+        penumbra_version: RepoOrVersionReq,
         grpc_url: Url,
         pd_join_url: Url,
         // eventually allow auto-download
@@ -294,7 +304,7 @@ impl Pvm {
         if self
             .environments
             .iter()
-            .any(|e| e.alias == environment_alias)
+            .any(|e| e.metadata().alias == environment_alias)
         {
             return Err(anyhow!(
                 "Environment with alias {} already exists",
@@ -315,39 +325,88 @@ impl Pvm {
             }
         };
 
-        let root_dir = cache
-            .home
-            .join("environments")
-            .join(environment_alias.clone());
+        match *matching_installed_version {
+            InstalledRelease::GitCheckout(ref release) => {
+                let root_dir = cache
+                    .home
+                    .join("environments")
+                    .join(environment_alias.clone());
 
-        let environment = Arc::new(Environment {
-            alias: environment_alias.clone(),
-            version_requirement: penumbra_version.clone(),
-            pinned_version: matching_installed_version.version.clone(),
-            grpc_url: grpc_url.clone(),
-            root_dir,
-            client_only,
-            pd_join_url,
-            generate_network,
-        });
+                // The cache's git checkout will be copied to the environment directory and then
+                // it may be manually checked out to the desired state.
+                let environment = Arc::new(Environment::CheckoutEnvironment(CheckoutEnvironment {
+                    metadata: EnvironmentMetadata {
+                        alias: environment_alias.clone(),
+                        grpc_url: grpc_url.clone(),
+                        root_dir,
+                        client_only,
+                        pd_join_url,
+                        generate_network,
+                    },
+                    git_checkout: Arc::new(release.clone()),
+                }));
 
-        tracing::debug!("initializing environment");
-        environment.initialize(&cache)?;
+                tracing::debug!("initializing environment");
+                // Copy the checkout into the environment dir.
+                environment.initialize(&cache)?;
 
-        tracing::debug!("created environment: {:?}", environment);
+                tracing::debug!("created environment: {:?}", environment);
 
-        // Add a reference to the environment to the app
-        self.environments.push(environment.clone());
+                // Add a reference to the environment to the app
+                self.environments.push(environment.clone());
 
-        self.persist()?;
+                self.persist()?;
 
-        Ok(environment)
+                Ok(environment)
+            }
+            InstalledRelease::Binary(ref matching_installed_version) => {
+                let root_dir = cache
+                    .home
+                    .join("environments")
+                    .join(environment_alias.clone());
+
+                let (version_requirement, pinned_version) = (
+                    match penumbra_version {
+                        RepoOrVersionReq::Repo(_) => unreachable!(
+                            "binary releases shouldn't return a repo installed version"
+                        ),
+                        RepoOrVersionReq::VersionReqOrLatest(version_req) => version_req,
+                    },
+                    matching_installed_version.version.clone(),
+                );
+
+                let environment = Arc::new(Environment::BinaryEnvironment(BinaryEnvironment {
+                    metadata: EnvironmentMetadata {
+                        alias: environment_alias.clone(),
+                        grpc_url: grpc_url.clone(),
+                        root_dir,
+                        client_only,
+                        pd_join_url,
+                        generate_network,
+                    },
+                    version_requirement,
+                    pinned_version,
+                }));
+
+                tracing::debug!("initializing environment");
+                environment.initialize(&cache)?;
+
+                tracing::debug!("created environment: {:?}", environment);
+
+                // Add a reference to the environment to the app
+                self.environments.push(environment.clone());
+
+                self.persist()?;
+
+                Ok(environment)
+            }
+        }
     }
 
     /// Returns all available versions and whether they're installed, optionally matching a given semver version requirement.
     pub async fn list_available(
         &self,
-        required_version: Option<&semver::VersionReq>,
+        required_version: Option<&RepoOrVersionReq>,
     ) -> Result<Vec<(Release, bool)>> {
         self.cache
             .list_available(required_version, &self.downloader)
@@ -356,7 +415,7 @@ impl Pvm {
 
     pub async fn install_release(
         &mut self,
-        penumbra_version: RepoOrVersion,
+        penumbra_version: RepoOrVersionReq,
         target_arch: Triple,
     ) -> Result<()> {
         let downloader = &self.downloader;
@@ -373,18 +432,48 @@ impl Pvm {
         // 3b. find all the versions that satisfy the semver requirement
         'outer: for release in releases {
             match penumbra_version {
-                RepoOrVersion::Repo(_) => {
+                RepoOrVersionReq::Repo(ref repo_url) => {
+                    // TODO: call a method for this
                     let target_repo_dir =
-                        hex::encode(Sha256::digest(&penumbra_version.to_string().as_bytes()));
-                    clone_repo(
-                        &penumbra_version.to_string(),
                         self.home_dir
                             .join("checkouts")
-                            .join(target_repo_dir)
-                            .as_str(),
-                    )?;
+                            .join(hex::encode(Sha256::digest(
+                                &penumbra_version.to_string().as_bytes(),
+                            )));
+                    // TODO: actually use gix and try to validate the checkout
+                    let target_repo_dir_metadata = fs::metadata(target_repo_dir.clone());
+                    if target_repo_dir_metadata.is_err()
+                        || target_repo_dir_metadata.unwrap().is_dir()
+                    {
+                        println!(
+                            "skipping clone, already seems to exist at {}",
+                            target_repo_dir
+                        );
+                        let installable_release = InstallableRelease::GitRepo(RepoMetadata {
+                            name: release.name.clone(),
+                            url: repo_url.clone(),
+                            checkout_dir: target_repo_dir.clone(),
+                        });
+                        let cache = &mut self.cache;
+                        println!("installing");
+                        cache.install_release(&installable_release)?;
+
+                        println!("persisting");
+                        self.persist()?;
+
+                        return Ok(());
+                    }
+
+                    let installable_release = clone_repo(&repo_url, &target_repo_dir.to_string())?;
+                    println!("installing git checkout: {}", &penumbra_version.to_string());
+                    let cache = &mut self.cache;
+                    cache.install_release(&installable_release)?;
+
+                    self.persist()?;
+
+                    return Ok(());
                 }
-                RepoOrVersion::VersionOrLatest(ref penumbra_version) => {
+                RepoOrVersionReq::VersionReqOrLatest(ref penumbra_version) => {
                     if penumbra_version.matches(&release.version, &latest_version) {
                         let release_name = release.name.clone();
                         tracing::debug!("found candidate release {}", release_name);
@@ -432,14 +521,16 @@ impl Pvm {
 
         let latest_release = sorted_releases.last().unwrap();
 
-        // Skip installation if the installed_releases already contains this release
         let cache = &mut self.cache;
-        if cache
-            .data
-            .installed_releases
-            .iter()
-            .any(|r| r.version == latest_release.version)
-        {
+
+        // Skip installation if the installed_releases already contains this release
+        if cache.data.installed_releases.iter().any(|r| {
+            match *r {
+                InstalledRelease::Binary(ref r) => r.version == latest_release.version,
+                // TODO: implement for git checkouts
+                InstalledRelease::GitCheckout(_) => false,
+            }
+        }) {
             println!("release {} already installed", latest_release.version);
             return Ok(());
         }
@@ -490,7 +581,7 @@ impl Pvm {
         let environment = self
             .environments
             .iter()
-            .find(|e| e.alias == environment_alias)
+            .find(|e| e.metadata().alias == environment_alias)
             .ok_or_else(|| anyhow!("Environment with alias {} not found", environment_alias))?;
 
         Ok(environment)
@@ -504,14 +595,14 @@ impl Pvm {
         let environment = self
             .environments
             .iter()
-            .find(|e| e.alias == environment_alias)
+            .find(|e| e.metadata().alias == environment_alias)
             .ok_or_else(|| anyhow!("Environment with alias {} not found", environment_alias))?;
 
         self.active_environment = Some(environment.clone());
 
         // Symlink the active environment's bin directory
         create_symlink(
-            &environment.clone().root_dir.join("bin"),
+            &environment.clone().path().join("bin"),
             &self.home_dir.join("bin"),
         )
         .context("error creating pcli symlink")?;
@@ -525,7 +616,7 @@ impl Pvm {
 
     pub fn pcli_home(&self) -> Option<Utf8PathBuf> {
         if let Some(environment) = &self.active_environment {
-            Some(environment.root_dir.join("pcli"))
+            Some(environment.pcli_path())
         } else {
             None
         }
@@ -533,7 +624,7 @@ impl Pvm {
 
     pub fn pclientd_home(&self) -> Option<Utf8PathBuf> {
         if let Some(environment) = &self.active_environment {
-            Some(environment.root_dir.join("pclientd"))
+            Some(environment.pclientd_path())
         } else {
             None
         }
@@ -543,9 +634,10 @@ impl Pvm {
         if let Some(environment) = &self.active_environment {
             // TODO: this isn't quite right if you want an environment with more
             // than one node configured
+            // TODO: should live in environment trait
             Some(
                 environment
-                    .root_dir
+                    .path()
                     .join("network_data")
                     .join("node0")
                     .join("pd"),
@@ -555,13 +647,14 @@ impl Pvm {
         }
     }
 
+    // TODO: move to Environment trait
     pub fn cometbft_home(&self) -> Option<Utf8PathBuf> {
         if let Some(environment) = &self.active_environment {
             // TODO: this isn't quite right if you want an environment with more
             // than one node configured
             Some(
                 environment
-                    .root_dir
+                    .path()
                     .join("network_data")
                     .join("node0")
                     .join("cometbft"),
