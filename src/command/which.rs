@@ -1,6 +1,7 @@
 use anyhow::Result;
 use camino::Utf8PathBuf;
 
+use crate::pvm::environment::EnvironmentTrait;
 use crate::pvm::Pvm;
 
 #[derive(Debug, clap::Parser)]
@@ -21,7 +22,7 @@ impl WhichCmd {
                 if *detailed {
                     println!("{}", env);
                 } else {
-                    println!("{}", env.alias);
+                    println!("{}", env.metadata().alias);
                 }
             }
             None => {

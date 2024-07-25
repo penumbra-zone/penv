@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context as _, Result};
 use camino::Utf8PathBuf;
 use url::Url;
 
-use super::Binary;
+use super::{Binary, ManagedFile};
 
 pub(crate) struct PclientdBinary {
     pub(crate) grpc_url: Url,
@@ -17,12 +17,14 @@ impl PclientdBinary {
     }
 }
 
-impl Binary for PclientdBinary {
+impl ManagedFile for PclientdBinary {
     fn path(&self) -> Utf8PathBuf {
         // TODO: this should probably only live here
         self.root_dir.join("bin/pclientd")
     }
+}
 
+impl Binary for PclientdBinary {
     fn initialize(&self, configs: Option<HashMap<String, String>>) -> Result<String> {
         // TODO: support additional pclientd configuration here, e.g. seed phrase, threshold, etc.
         let pclientd_args = vec![

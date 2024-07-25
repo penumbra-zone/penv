@@ -11,6 +11,7 @@ colored                          = { version = "2.1.0" }
 directories                      = { version = "4.0.1" }
 flate2                           = { version = "1.0" }
 futures                          = { version = "0.3" }
+gix                              = { version = "0.64.0", features = ["worktree-mutation", "blocking-network-client"] }
 hex                              = { version = "0.4.3" }
 indicatif                        = { version = "0.16" }
 regex                            = { version = "1.5" }

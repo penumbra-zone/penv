@@ -1,10 +1,14 @@
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
+use clap::value_parser;
 use colored::Colorize;
-use semver::VersionReq;
 use url::Url;
 
-use crate::pvm::Pvm;
+use crate::pvm::{
+    environment::{Environment, EnvironmentTrait as _, ManagedFile as _},
+    release::RepoOrVersionReq,
+    Pvm,
+};
 
 #[derive(Debug, clap::Parser)]
 pub struct ManageCmd {
@@ -53,7 +57,8 @@ pub struct CreateCmd {
     /// Specified as a semver version requirement, i.e. "0.79" will use the latest 0.79.x release.
     ///
     /// If a matching version is not installed, pvm will attempt to install it.
-    penumbra_version: VersionReq,
+    #[clap(value_parser = value_parser!(RepoOrVersionReq))]
+    penumbra_version: RepoOrVersionReq,
     /// The GRPC URL to use to connect to a fullnode.
     ///
     /// If pd configs are also being generated, this should typically be localhost:8080
@@ -158,10 +163,22 @@ impl ManageCmd {
                     generate_network.clone(),
                 )?;
 
-                println!(
-                    "created environment {} with pinned version {}",
-                    environment_alias, env.pinned_version
-                );
+                match *env {
+                    Environment::BinaryEnvironment(ref env) => {
+                        println!(
+                            "created environment {} with pinned version {}",
+                            environment_alias, env.pinned_version
+                        );
+                    }
+                    Environment::CheckoutEnvironment(ref env) => {
+                        println!(
+                            "created environment {} at {} pointing to git checkout {}",
+                            environment_alias,
+                            env.path(),
+                            env.git_checkout
+                        );
+                    }
+                }
 
                 Ok(())
             }
@@ -198,7 +215,7 @@ impl ManageCmd {
                     if *detailed {
                         if active_environment
                             .clone()
-                            .is_some_and(|e| e.alias == environment.alias)
+                            .is_some_and(|e| e.metadata().alias == environment.metadata().alias)
                         {
                             print!("{}", format!("{}Active: true\n\n", environment).green());
                         } else {
@@ -207,11 +224,14 @@ impl ManageCmd {
                     } else {
                         if active_environment
                             .clone()
-                            .is_some_and(|e| e.alias == environment.alias)
+                            .is_some_and(|e| e.metadata().alias == environment.metadata().alias)
                         {
-                            print!("{}", format!("{} (active)\n\n", environment.alias).green());
+                            print!(
+                                "{}",
+                                format!("{} (active)\n\n", environment.metadata().alias).green()
+                            );
                         } else {
-                            print!("{}", format!("{}\n\n", environment.alias).red());
+                            print!("{}", format!("{}\n\n", environment.metadata().alias).red());
                         }
                     }
                 }

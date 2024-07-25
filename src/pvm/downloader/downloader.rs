@@ -13,7 +13,7 @@ use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::task;
 
-use crate::pvm::release::{InstallableRelease, RawRelease, Release};
+use crate::pvm::release::{InstallableBinaryRelease, InstallableRelease, RawRelease, Release};
 
 /// Manages downloading files to a target directory and displaying progress.
 #[derive(Debug, Clone)]
@@ -440,12 +440,12 @@ impl Downloader {
 
         mp_thread.join().unwrap();
 
-        Ok(InstallableRelease {
+        Ok(InstallableRelease::Binary(InstallableBinaryRelease {
             pcli,
             pclientd,
             pd,
             release: release.clone(),
             target_arch: target_arch.parse()?,
-        })
+        }))
     }
 }

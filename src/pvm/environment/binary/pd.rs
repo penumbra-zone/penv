@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context as _, Result};
 use camino::Utf8PathBuf;
 use url::Url;
 
-use super::Binary;
+use super::{Binary, ManagedFile};
 
 pub(crate) struct PdBinary {
     pub(crate) pd_join_url: Url,
@@ -17,11 +17,13 @@ impl PdBinary {
     }
 }
 
-impl Binary for PdBinary {
+impl ManagedFile for PdBinary {
     fn path(&self) -> Utf8PathBuf {
         self.root_dir.join("bin/pd")
     }
+}
 
+impl Binary for PdBinary {
     fn initialize(&self, configs: Option<HashMap<String, String>>) -> Result<String> {
         // TODO: support additional pd configuration here, for ex to generate
         // or to use a same/different seed phrase from the one configured for pcli/pclientd

@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 
+use crate::pvm::environment::EnvironmentTrait as _;
 use crate::pvm::Pvm;
 
 use super::hook::Shell;
@@ -23,7 +24,7 @@ impl EnvCmd {
                 "pvm_active_environment",
                 &pvm.active_environment
                     .clone()
-                    .map(|e| e.alias.clone())
+                    .map(|e| e.metadata().alias.clone())
                     .unwrap_or_default(),
             );
             if let Some(pcli_home) = pvm.pcli_home() {
@@ -32,13 +33,16 @@ impl EnvCmd {
             if let Some(pclientd_home) = pvm.pclientd_home() {
                 context.insert("pclientd_home", &pclientd_home);
             }
-            if !active_environment.client_only {
+            if !active_environment.metadata().client_only {
                 if let Some(pd_home) = pvm.pd_home() {
                     context.insert("pd_home", &pd_home);
                 }
 
-                context.insert("pd_join_url", &active_environment.pd_join_url);
-                context.insert("pd_cometbft_proxy_url", &active_environment.pd_join_url);
+                context.insert("pd_join_url", &active_environment.metadata().pd_join_url);
+                context.insert(
+                    "pd_cometbft_proxy_url",
+                    &active_environment.metadata().pd_join_url,
+                );
                 context.insert("cometbft_home", &pvm.cometbft_home());
             }
         }
