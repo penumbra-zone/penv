@@ -1,1 +1,1 @@
-echo "hello from zsh-pdwrapper"
+exec cargo run --manifest-path="{{ checkout_dir }}/Cargo.toml" --release --bin pd -- "$@"

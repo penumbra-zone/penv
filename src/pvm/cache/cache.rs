@@ -88,18 +88,6 @@ impl Cache {
         // Identify the paths within the cache to which the release's downloaded assets (currently
         // stored in a temporary directory) should be copied to.
         let installed_release_path = self.generate_installed_release_path(release);
-        let installed_release_bin_path = installed_release_path.join("bin");
-
-        tracing::debug!(
-            "creating installed release bin path: {}",
-            installed_release_bin_path
-        );
-        fs::create_dir_all(&installed_release_bin_path).with_context(|| {
-            format!(
-                "Failed to create installed release bin path directory {}",
-                installed_release_bin_path
-            )
-        })?;
 
         // Copy the assets to their target destinations.
         let installed_release = release.install(installed_release_path)?;
@@ -123,7 +111,7 @@ impl Cache {
                 path
             }
             InstallableRelease::GitRepo(metadata) => {
-                let mut path = self.home.join("versions");
+                let mut path = self.home.join("checkouts");
 
                 let target_repo_dir =
                     // TODO: this will only allow a single checkout of a given repo url,

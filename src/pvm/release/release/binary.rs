@@ -183,6 +183,18 @@ impl Installable for InstallableBinaryRelease {
 
     fn install(&self, version_path: Utf8PathBuf) -> Result<InstalledRelease> {
         // TODO: reuse fs code
+        let installed_release_bin_path = version_path.join("bin");
+
+        tracing::debug!(
+            "creating installed release bin path: {}",
+            installed_release_bin_path
+        );
+        fs::create_dir_all(&installed_release_bin_path).with_context(|| {
+            format!(
+                "Failed to create installed release bin path directory {}",
+                installed_release_bin_path
+            )
+        })?;
         let mut installed_assets = Vec::new();
         let version_bin_path = version_path.join("bin");
         let file = self.pcli.as_ref().expect("expected pcli file");

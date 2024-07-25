@@ -163,3 +163,34 @@ pub(crate) fn extract_triple(filename: &str) -> Option<Triple> {
 
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::pvm::release::VersionReqOrLatest;
+
+    #[test]
+    fn deserialize_version() {
+        let v = VersionReqOrLatest::Latest;
+
+        // Serialize to TOML string
+        eprintln!("{}", toml::to_string(&v).unwrap());
+
+        let toml_str = r#"
+            type = "Latest"
+        "#;
+
+        toml::from_str::<VersionReqOrLatest>(toml_str).unwrap();
+
+        let v = VersionReqOrLatest::VersionReq("1.0.0".parse().unwrap());
+
+        // Serialize to TOML string
+        eprintln!("{}", toml::to_string(&v).unwrap());
+
+        let toml_str = r#"
+            type = "VersionReq"
+            args = "^1.0.0"
+        "#;
+
+        toml::from_str::<VersionReqOrLatest>(toml_str).unwrap();
+    }
+}

@@ -186,6 +186,15 @@ pub(crate) enum InstallableRelease {
     Binary(InstallableBinaryRelease),
 }
 
+impl Display for InstallableRelease {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InstallableRelease::GitRepo(repo) => write!(f, "{}", repo),
+            InstallableRelease::Binary(release) => write!(f, "{}", release),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct InstallableBinaryRelease {
     pub(crate) pcli: Option<Utf8PathBuf>,
@@ -194,6 +203,12 @@ pub(crate) struct InstallableBinaryRelease {
     pub(crate) target_arch: Triple,
     /// The underlying release information.
     pub(crate) release: Release,
+}
+
+impl Display for InstallableBinaryRelease {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.release)
+    }
 }
 
 impl InstallableBinaryRelease {

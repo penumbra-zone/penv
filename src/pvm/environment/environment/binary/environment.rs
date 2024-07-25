@@ -1,11 +1,13 @@
 use anyhow::{Context as _, Result};
+use serde::de::{self, MapAccess, Visitor};
+use serde::ser::SerializeStruct as _;
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs;
 
 use camino::Utf8PathBuf;
 use semver::Version;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::pvm::{
     cache::cache::Cache,
@@ -15,7 +17,7 @@ use crate::pvm::{
     release::{RepoOrVersion, VersionReqOrLatest},
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BinaryEnvironment {
     /// Fields common to all environment types.
     pub metadata: EnvironmentMetadata,
@@ -31,6 +33,122 @@ pub struct BinaryEnvironment {
     /// For git checkouts, there is no version -- the state of the checkout
     /// defines the code that will run.
     pub pinned_version: Version,
+}
+
+impl Serialize for BinaryEnvironment {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("BinaryEnvironment", 3)?;
+        state.serialize_field("pinned_version", &self.pinned_version)?;
+        state.serialize_field("version_requirement", &self.version_requirement)?;
+        state.serialize_field("metadata", &self.metadata)?;
+        state.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for BinaryEnvironment {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        enum Field {
+            Metadata,
+            PinnedVersion,
+            VersionRequirement,
+        }
+
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter
+                            .write_str("`metadata`, `pinned_version`, or `version_requirement`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "metadata" => Ok(Field::Metadata),
+                            "pinned_version" => Ok(Field::PinnedVersion),
+                            "version_requirement" => Ok(Field::VersionRequirement),
+                            _ => Err(de::Error::unknown_field(value, FIELDS)),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+
+        struct BinaryEnvironmentVisitor;
+
+        impl<'de> Visitor<'de> for BinaryEnvironmentVisitor {
+            type Value = BinaryEnvironment;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("struct BinaryEnvironment")
+            }
+
+            fn visit_map<V>(self, mut map: V) -> Result<BinaryEnvironment, V::Error>
+            where
+                V: MapAccess<'de>,
+            {
+                let mut metadata: Option<EnvironmentMetadata> = None;
+                let mut pinned_version: Option<Version> = None;
+                let mut version_requirement: Option<VersionReqOrLatest> = None;
+
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Metadata => {
+                            if metadata.is_some() {
+                                return Err(de::Error::duplicate_field("metadata"));
+                            }
+                            metadata = Some(map.next_value()?);
+                        }
+                        Field::PinnedVersion => {
+                            if pinned_version.is_some() {
+                                return Err(de::Error::duplicate_field("pinned_version"));
+                            }
+                            pinned_version = Some(map.next_value()?);
+                        }
+                        Field::VersionRequirement => {
+                            if version_requirement.is_some() {
+                                return Err(de::Error::duplicate_field("version_requirement"));
+                            }
+                            version_requirement = Some(map.next_value()?);
+                        }
+                    }
+                }
+
+                let metadata = metadata.ok_or_else(|| de::Error::missing_field("metadata"))?;
+                let pinned_version =
+                    pinned_version.ok_or_else(|| de::Error::missing_field("pinned_version"))?;
+                let version_requirement = version_requirement
+                    .ok_or_else(|| de::Error::missing_field("version_requirement"))?;
+
+                Ok(BinaryEnvironment {
+                    metadata,
+                    version_requirement,
+                    pinned_version,
+                })
+            }
+        }
+
+        const FIELDS: &'static [&'static str] =
+            &["metadata", "version_requirement", "pinned_version"];
+        deserializer.deserialize_struct("BinaryEnvironment", FIELDS, BinaryEnvironmentVisitor)
+    }
 }
 
 impl ManagedFile for BinaryEnvironment {
@@ -164,5 +282,69 @@ impl EnvironmentTrait for BinaryEnvironment {
 
     fn metadata(&self) -> &EnvironmentMetadata {
         &self.metadata
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use semver::Version;
+
+    use crate::pvm::release::VersionReqOrLatest;
+
+    use super::*;
+
+    #[test]
+    fn deserialize_binary_environment() {
+        let metadata = EnvironmentMetadata {
+            alias: "test".to_string(),
+            grpc_url: "http://localhost:9090".try_into().expect("ok"),
+            root_dir: "/tmp/fake".into(),
+            client_only: false,
+            generate_network: true,
+            pd_join_url: "http://localhost:9090".try_into().expect("ok"),
+        };
+
+        // Serialize to TOML string
+        eprintln!("{}", toml::to_string(&metadata).unwrap());
+
+        let toml_str = r#"
+            alias = "test"
+            grpc_url = "http://localhost:9090/"
+            root_dir = "/tmp/fake"
+            pd_join_url = "http://localhost:9090/"
+            client_only = false
+            generate_network = true
+        "#;
+
+        toml::from_str::<EnvironmentMetadata>(toml_str).unwrap();
+
+        let env = BinaryEnvironment {
+            metadata: metadata.clone(),
+            version_requirement: VersionReqOrLatest::Latest,
+            pinned_version: Version::new(1, 0, 0),
+        };
+
+        // Serialize to TOML string
+        eprintln!("{}", toml::to_string(&env).unwrap());
+
+        // Example TOML string for deserialization
+        let toml_str = r#"
+            pinned_version = "1.0.0"
+
+            [version_requirement]
+            type = "Latest"
+
+            [metadata]
+            alias = "test"
+            grpc_url = "http://localhost:9090/"
+            root_dir = "/tmp/fake"
+            pd_join_url = "http://localhost:9090/"
+            client_only = false
+            generate_network = true
+        "#;
+
+        // Deserialize from TOML string
+        toml::from_str::<BinaryEnvironment>(toml_str).unwrap();
     }
 }

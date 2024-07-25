@@ -185,6 +185,52 @@ PENUMBRA_PD_JOIN_URL
 COMETBFT_HOME
 ```
 
+## Working With Git Checkouts
+
+You can also use `pvm` to create an environment based on a git checkout.
+
+For example, to create a dev environment with a generated local devnet based on the `penumbra-zone/penumbra` GitHub repository:
+
+```console
+$ pvm install 'git@github.com:penumbra-zone/penumbra.git'
+
+installing git@github.com:penumbra-zone/penumbra.git
+installing latest matching release: git@github.com:penumbra-zone/penumbra.git (git@github.com:penumbra-zone/penumbra.git)
+cloning repo git@github.com:penumbra-zone/penumbra.git to /Users/user/Library/Application Support/zone.penumbra.pvm/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8
+fetch...
+Checking out into "/Users/user/Library/Application Support/zone.penumbra.pvm/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8" ...
+
+$ pvm manage create main_repo-devnet 'git@github.com:penumbra-zone/penumbra.git' http://localhost:8080 --generate-network
+
+created environment main_repo-devnet at /Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet pointing to git checkout git@github.com:penumbra-zone/penumbra.git (git@github.com:penumbra-zone/penumbra.git)
+```
+
+When you activate the environment, your shell will be populated with `pcli`/`pclientd`/`pd` wrappers that build the corresponding binary from the git repository.
+
+```console
+$ which pcli
+
+/Users/user/Library/Application Support/zone.penumbra.pvm/bin/pcli
+
+$ ls -la /Users/user/Library/Application\ Support/zone.penumbra.pvm/
+
+total 32
+drwxr-xr-x   8 user staff   256 Jul 25 16:26 .
+drwx------+ 99 user staff  3168 Jul 25 16:19 ..
+lrwxr-xr-x   1 user staff    96 Jul 25 16:26 bin -> /Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/bin
+-rw-r--r--   1 user staff  5314 Jul 25 16:26 cache.toml
+drwxr-xr-x   3 user staff    96 Jul 25 16:20 checkouts
+drwxr-xr-x   4 user staff   128 Jul 25 16:21 environments
+-rw-r--r--   1 user staff  6671 Jul 25 16:26 pvm.toml
+drwxr-xr-x   3 user staff    96 Jul 25 16:20 versions
+
+$ cat /Users/user/Library/Application\ Support/zone.penumbra.pvm/environments/main_repo-devnet/bin/pcli
+
+exec cargo run --manifest-path="/Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/checkout/Cargo.toml" --release --bin pcli -- "$@"
+```
+
+The working git repository will be placed in the `checkout` subdirectory of the relevant environment, for example: `/Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/checkout`.
+
 ## Security
 
 If you believe you've found a security-related issue with pvm,

@@ -5,7 +5,7 @@ use camino::Utf8PathBuf;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
-use crate::pvm::release::InstalledAsset;
+use crate::pvm::{downloader::git::clone_repo, release::InstalledAsset};
 
 use super::{Installable, InstalledRelease, UsableRelease};
 
@@ -29,9 +29,11 @@ impl Installable for RepoMetadata {
     }
 
     fn install(&self, install_path: Utf8PathBuf) -> Result<InstalledRelease> {
-        // Nothing needs to happen to install a git checkout. The aliases will
-        // be part of the environment, and automatically build the binaries as
-        // needed.
+        // Clone the repository into the install path
+        // TODO: is there any reason to do this instead of just cloning the release on-demand
+        // into the environment's checkout dir? we copy it later eventually
+        clone_repo(&self.url, &install_path.to_string()).context("error cloning repository")?;
+
         Ok(InstalledRelease::GitCheckout(CheckoutMetadata {
             name: self.name.clone(),
             url: self.url.clone(),

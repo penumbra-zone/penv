@@ -27,6 +27,7 @@ pub use binary::*;
 pub use checkout::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(tag = "type", content = "args")]
 pub enum Environment {
     CheckoutEnvironment(CheckoutEnvironment),
     BinaryEnvironment(BinaryEnvironment),
