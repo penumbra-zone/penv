@@ -624,7 +624,8 @@ impl Pvm {
 
     pub fn pcli_home(&self) -> Option<Utf8PathBuf> {
         if let Some(environment) = &self.active_environment {
-            Some(environment.pcli_path())
+            // TODO: move to Environment trait
+            Some(environment.path().join("pcli"))
         } else {
             None
         }
@@ -632,7 +633,7 @@ impl Pvm {
 
     pub fn pclientd_home(&self) -> Option<Utf8PathBuf> {
         if let Some(environment) = &self.active_environment {
-            Some(environment.pclientd_path())
+            Some(environment.path().join("pclientd"))
         } else {
             None
         }
