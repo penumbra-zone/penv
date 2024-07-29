@@ -4,8 +4,8 @@ use camino::Utf8PathBuf;
 use gix::clone;
 use std::fs;
 
-use crate::pvm::release::git_repo::RepoMetadata;
-use crate::pvm::release::InstallableRelease;
+use crate::penv::release::git_repo::RepoMetadata;
+use crate::penv::release::InstallableRelease;
 
 // TODO: expose as method on Downloader...
 pub fn clone_repo(repo_url: &str, dest: &str) -> Result<InstallableRelease> {

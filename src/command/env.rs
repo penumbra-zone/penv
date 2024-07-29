@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 
-use crate::pvm::environment::EnvironmentTrait as _;
-use crate::pvm::Pvm;
+use crate::penv::environment::EnvironmentTrait as _;
+use crate::penv::Penv;
 
 use super::hook::Shell;
 
@@ -15,26 +15,27 @@ pub struct EnvCmd {
 
 impl EnvCmd {
     pub async fn exec(&self, home: Utf8PathBuf) -> Result<()> {
-        let pvm = Pvm::new(home.clone())?;
+        let penv = Penv::new(home.clone())?;
 
         let mut context = tera::Context::new();
 
-        if let Some(active_environment) = &pvm.active_environment {
+        if let Some(active_environment) = &penv.active_environment {
             context.insert(
-                "pvm_active_environment",
-                &pvm.active_environment
+                "penv_active_environment",
+                &penv
+                    .active_environment
                     .clone()
                     .map(|e| e.metadata().alias.clone())
                     .unwrap_or_default(),
             );
-            if let Some(pcli_home) = pvm.pcli_home() {
+            if let Some(pcli_home) = penv.pcli_home() {
                 context.insert("pcli_home", &pcli_home);
             }
-            if let Some(pclientd_home) = pvm.pclientd_home() {
+            if let Some(pclientd_home) = penv.pclientd_home() {
                 context.insert("pclientd_home", &pclientd_home);
             }
             if !active_environment.metadata().client_only {
-                if let Some(pd_home) = pvm.pd_home() {
+                if let Some(pd_home) = penv.pd_home() {
                     context.insert("pd_home", &pd_home);
                 }
 
@@ -43,11 +44,11 @@ impl EnvCmd {
                     "pd_cometbft_proxy_url",
                     &active_environment.metadata().pd_join_url,
                 );
-                context.insert("cometbft_home", &pvm.cometbft_home());
+                context.insert("cometbft_home", &penv.cometbft_home());
             }
         }
 
-        context.insert("path_add", &pvm.path_string());
+        context.insert("path_add", &penv.path_string());
 
         match self.shell {
             Shell::Bash => self.print_bash(&context),

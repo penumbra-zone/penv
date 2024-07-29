@@ -4,10 +4,10 @@ use clap::value_parser;
 use colored::Colorize;
 use url::Url;
 
-use crate::pvm::{
+use crate::penv::{
     environment::{Environment, EnvironmentTrait as _, ManagedFile as _},
     release::RepoOrVersionReq,
-    Pvm,
+    Penv,
 };
 
 #[derive(Debug, clap::Parser)]
@@ -56,7 +56,7 @@ pub struct CreateCmd {
     ///
     /// Specified as a semver version requirement, i.e. "0.79" will use the latest 0.79.x release.
     ///
-    /// If a matching version is not installed, pvm will attempt to install it.
+    /// If a matching version is not installed, penv will attempt to install it.
     #[clap(value_parser = value_parser!(RepoOrVersionReq))]
     penumbra_version: RepoOrVersionReq,
     /// The GRPC URL to use to connect to a fullnode.
@@ -78,9 +78,9 @@ pub struct CreateCmd {
     /// Disable setting up a fullnode installation.
     #[clap(long)]
     client_only: bool,
-    /// By default, pvm will join an existing network as specified by the [`CreateCmd::pd_join_url`].
+    /// By default, penv will join an existing network as specified by the [`CreateCmd::pd_join_url`].
     ///
-    /// By setting this flag, pvm will generate a new dev network instead.
+    /// By setting this flag, penv will generate a new dev network instead.
     ///
     /// Not used if `client_only` is set.
     #[clap(long)]
@@ -151,9 +151,9 @@ impl ManageCmd {
                     }
                 };
 
-                let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
+                let mut penv = Penv::new_from_repository(repository_name.clone(), home.clone())?;
 
-                let env = pvm.create_environment(
+                let env = penv.create_environment(
                     environment_alias.clone(),
                     penumbra_version.clone(),
                     grpc_url.clone(),
@@ -185,18 +185,18 @@ impl ManageCmd {
             ManageCmd {
                 subcmd: ManageTopSubCmd::Delete(DeleteCmd { environment_alias }),
             } => {
-                let mut pvm = Pvm::new(home.clone())?;
+                let mut penv = Penv::new(home.clone())?;
 
-                pvm.delete_environment(environment_alias.clone())?;
+                penv.delete_environment(environment_alias.clone())?;
 
                 Ok(())
             }
             ManageCmd {
                 subcmd: ManageTopSubCmd::Info(InfoCmd { environment_alias }),
             } => {
-                let pvm = Pvm::new(home.clone())?;
+                let penv = Penv::new(home.clone())?;
 
-                let info = pvm.environment_info(environment_alias.clone())?;
+                let info = penv.environment_info(environment_alias.clone())?;
 
                 println!("{}", info);
 
@@ -205,10 +205,10 @@ impl ManageCmd {
             ManageCmd {
                 subcmd: ManageTopSubCmd::List(ListCmd { detailed }),
             } => {
-                let pvm = Pvm::new(home.clone())?;
+                let penv = Penv::new(home.clone())?;
 
-                let environments = pvm.environments()?;
-                let active_environment = pvm.active_environment.clone();
+                let environments = penv.environments()?;
+                let active_environment = penv.active_environment.clone();
 
                 println!("Environments:");
                 for environment in environments.iter() {

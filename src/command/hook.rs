@@ -11,7 +11,7 @@ pub struct HookCmd {
     shell: Shell,
 }
 
-// Supported shells for configuring pvm environments
+// Supported shells for configuring penv environments
 #[derive(Debug, Clone, Default, clap::ValueEnum, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Shell {
@@ -23,17 +23,17 @@ pub enum Shell {
 
 impl HookCmd {
     pub async fn exec(&self, _home: Utf8PathBuf) -> Result<()> {
-        // Look up the path for the currently executed `pvm`, so we can use the fullpath
+        // Look up the path for the currently executed `penv`, so we can use the fullpath
         // in the shell configs. This ensures that the sourced shell will work,
-        // even if pvm isn't on PATH already.
+        // even if penv isn't on PATH already.
         let current_exe = match env::current_exe() {
             Ok(exe_path) => exe_path,
             Err(e) => return Err(anyhow!("failed to get current exe path: {e}")),
         };
 
-        // Load Tera template config, so we can interpolate pvm fullpath in shell hooks.
+        // Load Tera template config, so we can interpolate penv fullpath in shell hooks.
         let mut context = tera::Context::new();
-        context.insert("pvm_executable", &current_exe);
+        context.insert("penv_executable", &current_exe);
 
         let shell = self.shell.clone();
         match shell {

@@ -12,7 +12,7 @@ use serde::{
     Deserialize, Deserializer, Serialize, Serializer,
 };
 
-use crate::pvm::release::{InstalledAsset, InstalledRelease};
+use crate::penv::release::{InstalledAsset, InstalledRelease};
 
 use super::{Installable, InstallableBinaryRelease, UsableRelease};
 

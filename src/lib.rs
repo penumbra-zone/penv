@@ -6,12 +6,12 @@ use directories::ProjectDirs;
 
 pub mod command;
 pub mod opt;
-mod pvm;
+mod penv;
 
-pub use pvm::Pvm;
+pub use penv::Penv;
 
 pub fn default_home() -> Utf8PathBuf {
-    let path = ProjectDirs::from("zone", "penumbra", "pvm")
+    let path = ProjectDirs::from("zone", "penumbra", "penv")
         .expect("Failed to get platform data dir")
         .data_dir()
         .to_path_buf();

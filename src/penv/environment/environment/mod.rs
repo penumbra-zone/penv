@@ -14,8 +14,8 @@ use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::pvm::cache::cache::Cache;
-use crate::pvm::release::RepoOrVersion;
+use crate::penv::cache::cache::Cache;
+use crate::penv::release::RepoOrVersion;
 
 use super::{ManagedFile, PcliBinary, PclientdBinary, PdBinary};
 

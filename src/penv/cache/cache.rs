@@ -8,7 +8,7 @@ use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as _, Sha256};
 
-use crate::pvm::{
+use crate::penv::{
     downloader::Downloader,
     release::{
         Installable as _, InstallableRelease, InstalledRelease, Release, RepoOrVersion,
@@ -279,7 +279,7 @@ mod tests {
     use semver::Version;
     use target_lexicon::Triple;
 
-    use crate::pvm::release::{binary::InstalledBinaryRelease, InstalledAsset};
+    use crate::penv::release::{binary::InstalledBinaryRelease, InstalledAsset};
 
     use super::*;
 

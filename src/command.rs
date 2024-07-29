@@ -38,16 +38,16 @@ pub enum Command {
     /// Display information about the active Penumbra environment.
     #[clap(display_order = 600, visible_alias = "w")]
     Which(WhichCmd),
-    /// Output the necessary environment variables to use pvm.
+    /// Output the necessary environment variables to use penv.
     #[clap(display_order = 700, visible_alias = "e")]
     Env(EnvCmd),
-    /// Output the necessary shell script to hook pvm into the active shell.
+    /// Output the necessary shell script to hook penv into the active shell.
     #[clap(display_order = 800, visible_alias = "h")]
     Hook(HookCmd),
     /// Unset the currently active environment.
     #[clap(display_order = 900, visible_alias = "d")]
     Deactivate,
-    /// Reset all pvm state.
+    /// Reset all penv state.
     #[clap(display_order = 950)]
     UnsafeResetAll,
 }

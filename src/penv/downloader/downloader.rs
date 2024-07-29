@@ -13,7 +13,7 @@ use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::task;
 
-use crate::pvm::release::{InstallableBinaryRelease, InstallableRelease, RawRelease, Release};
+use crate::penv::release::{InstallableBinaryRelease, InstallableRelease, RawRelease, Release};
 
 /// Manages downloading files to a target directory and displaying progress.
 #[derive(Debug, Clone)]

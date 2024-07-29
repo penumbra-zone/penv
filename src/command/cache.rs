@@ -4,8 +4,8 @@ use clap::value_parser;
 // TODO: better handle colorized text with flags
 use colored::Colorize;
 
-use crate::pvm::environment::EnvironmentTrait;
-use crate::pvm::release::{RepoOrVersion, RepoOrVersionReq};
+use crate::penv::environment::EnvironmentTrait;
+use crate::penv::release::{RepoOrVersion, RepoOrVersionReq};
 
 #[derive(Debug, clap::Parser)]
 pub struct CacheCmd {
@@ -52,7 +52,7 @@ impl CacheCmd {
             CacheCmd {
                 subcmd: CacheTopSubCmd::List(ListCmd { required_version }),
             } => {
-                let cache = crate::pvm::cache::cache::Cache::new(home)?;
+                let cache = crate::penv::cache::cache::Cache::new(home)?;
                 let versions = cache.list_installed(required_version.as_ref())?;
                 for version in versions {
                     println!("{}", version);
@@ -63,8 +63,8 @@ impl CacheCmd {
                 subcmd: CacheTopSubCmd::Delete(DeleteCmd { version }),
             } => {
                 // don't allow deletion if environment uses this version
-                let mut pvm = crate::pvm::Pvm::new(home.clone())?;
-                if let Some(env) = pvm
+                let mut penv = crate::penv::Penv::new(home.clone())?;
+                if let Some(env) = penv
                     .environments
                     .iter()
                     .find(|e| (**e).satisfied_by_version(version))
@@ -76,13 +76,13 @@ impl CacheCmd {
                     ));
                 }
 
-                let installed_version = pvm.cache.get_installed_release(version);
+                let installed_version = penv.cache.get_installed_release(version);
 
                 match installed_version {
                     Some(installed_version) => {
                         // TODO: cloning here is dumb and defeats the point of taking ownership
-                        pvm.cache.delete(installed_version.clone())?;
-                        pvm.cache.persist()?;
+                        penv.cache.delete(installed_version.clone())?;
+                        penv.cache.persist()?;
                         Ok(())
                     }
                     None => return Err(anyhow!("Version {} is not installed", version)),
@@ -91,8 +91,8 @@ impl CacheCmd {
             CacheCmd {
                 subcmd: CacheTopSubCmd::Available(AvailableCmd { required_version }),
             } => {
-                let pvm = crate::pvm::Pvm::new(home.clone())?;
-                let releases = pvm.list_available(required_version.as_ref()).await?;
+                let penv = crate::penv::Penv::new(home.clone())?;
+                let releases = penv.list_available(required_version.as_ref()).await?;
                 for (release, installed) in releases {
                     if installed {
                         println!("{}", release.version.to_string().green());
@@ -112,7 +112,7 @@ impl CacheCmd {
                 }
 
                 // Re-instantiate and persist the cache.
-                let cache = crate::pvm::cache::cache::Cache::new(home)?;
+                let cache = crate::penv::cache::cache::Cache::new(home)?;
                 cache.persist()?;
 
                 Ok(())

@@ -1,5 +1,5 @@
-{% if pvm_active_environment is defined %}
-export PVM_ACTIVE_ENVIRONMENT="{{ pvm_active_environment }}"
+{% if penv_active_environment is defined %}
+export PENV_ACTIVE_ENVIRONMENT="{{ penv_active_environment }}"
 {% if pcli_home is defined %}
 export PENUMBRA_PCLI_HOME="{{ pcli_home }}"
 {% endif %}
@@ -13,7 +13,7 @@ export PENUMBRA_PD_JOIN_URL="{{ pd_join_url }}"
 export COMETBFT_HOME="{{ cometbft_home }}"
 {% endif %}
 {% else %}
-unset PVM_ACTIVE_ENVIRONMENT
+unset PENV_ACTIVE_ENVIRONMENT
 unset PENUMBRA_PCLI_HOME
 unset PENUMBRA_PCLIENTD_HOME
 unset PENUMBRA_PD_HOME

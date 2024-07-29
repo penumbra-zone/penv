@@ -1,9 +1,9 @@
-_pvm_hook() {
+_penv_hook() {
   trap -- '' SIGINT
-  eval "$("{{ pvm_executable }}" env zsh)"
+  eval "$("{{ penv_executable }}" env zsh)"
   trap - SIGINT
 }
 typeset -ag precmd_functions
-if (( ! ${precmd_functions[(I)_pvm_hook]} )); then
-  precmd_functions=(_pvm_hook $precmd_functions)
+if (( ! ${precmd_functions[(I)_penv_hook]} )); then
+  precmd_functions=(_penv_hook $precmd_functions)
 fi
