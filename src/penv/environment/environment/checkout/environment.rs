@@ -10,10 +10,10 @@ use std::sync::Arc;
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 
-use crate::pvm::cache::cache::Cache;
-use crate::pvm::environment::{Binary as _, EnvironmentMetadata, EnvironmentTrait, ManagedFile};
-use crate::pvm::release::git_repo::CheckoutMetadata;
-use crate::pvm::release::RepoOrVersion;
+use crate::penv::cache::cache::Cache;
+use crate::penv::environment::{Binary as _, EnvironmentMetadata, EnvironmentTrait, ManagedFile};
+use crate::penv::release::git_repo::CheckoutMetadata;
+use crate::penv::release::RepoOrVersion;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct CheckoutEnvironment {

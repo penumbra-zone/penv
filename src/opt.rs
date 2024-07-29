@@ -1,4 +1,4 @@
-use crate::default_home as default_pvm_home;
+use crate::default_home as default_penv_home;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use std::io::IsTerminal as _;
@@ -9,15 +9,15 @@ use crate::command::Command;
 
 #[derive(Debug, Parser)]
 #[clap(
-    name = "pvm",
-    about = "The Penumbra version manager command-line interface.",
+    name = "penv",
+    about = "The Penumbra environment manager command-line interface.",
     version
 )]
 pub struct Opt {
     #[clap(subcommand)]
     pub cmd: Command,
-    /// The home directory used to store pvm-related configuration and cache data.
-    #[clap(long, default_value_t = default_pvm_home(), env = "PENUMBRA_PVM_HOME")]
+    /// The home directory used to store penv-related configuration and cache data.
+    #[clap(long, default_value_t = default_penv_home(), env = "PENUMBRA_PENV_HOME")]
     pub home: Utf8PathBuf,
     /// Override the GRPC URL that will be used to connect to a fullnode.
     ///

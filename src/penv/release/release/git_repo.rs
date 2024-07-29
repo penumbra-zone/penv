@@ -5,7 +5,7 @@ use camino::Utf8PathBuf;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
-use crate::pvm::{downloader::git::clone_repo, release::InstalledAsset};
+use crate::penv::{downloader::git::clone_repo, release::InstalledAsset};
 
 use super::{Installable, InstalledRelease, UsableRelease};
 

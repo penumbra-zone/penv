@@ -17,7 +17,7 @@ use sha2::Sha256;
 use target_lexicon::Triple;
 use url::Url;
 
-use crate::pvm::{
+use crate::penv::{
     cache::cache::CacheData,
     environment::{
         BinaryEnvironment, CheckoutEnvironment, Environment, EnvironmentMetadata, EnvironmentTrait,
@@ -39,7 +39,7 @@ use super::{
 ///
 /// This type encapsulates application state and exposes higher-level
 /// operations.
-pub struct Pvm {
+pub struct Penv {
     pub cache: Cache,
     pub(crate) downloader: Downloader,
     pub environments: Environments,
@@ -48,12 +48,12 @@ pub struct Pvm {
     pub active_environment: Option<Arc<Environment>>,
 }
 
-impl Serialize for Pvm {
+impl Serialize for Penv {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Pvm", 5)?;
+        let mut state = serializer.serialize_struct("Penv", 5)?;
         state.serialize_field("repository_name", &self.repository_name)?;
         state.serialize_field("home_dir", &self.home_dir)?;
         state.serialize_field(
@@ -69,7 +69,7 @@ impl Serialize for Pvm {
     }
 }
 
-impl<'de> Deserialize<'de> for Pvm {
+impl<'de> Deserialize<'de> for Penv {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -115,16 +115,16 @@ impl<'de> Deserialize<'de> for Pvm {
             }
         }
 
-        struct PvmVisitor;
+        struct PenvVisitor;
 
-        impl<'de> Visitor<'de> for PvmVisitor {
-            type Value = Pvm;
+        impl<'de> Visitor<'de> for PenvVisitor {
+            type Value = Penv;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct Pvm")
+                formatter.write_str("struct Penv")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<Pvm, V::Error>
+            fn visit_map<V>(self, mut map: V) -> Result<Penv, V::Error>
             where
                 V: MapAccess<'de>,
             {
@@ -185,7 +185,7 @@ impl<'de> Deserialize<'de> for Pvm {
                     data: cache.ok_or_else(|| de::Error::missing_field("cache"))?,
                 };
 
-                Ok(Pvm {
+                Ok(Penv {
                     repository_name: repository_name.clone(),
                     home_dir: home_dir.clone(),
                     environments,
@@ -202,18 +202,18 @@ impl<'de> Deserialize<'de> for Pvm {
             "environments",
             "active_environment",
         ];
-        deserializer.deserialize_struct("Pvm", FIELDS, PvmVisitor)
+        deserializer.deserialize_struct("Penv", FIELDS, PenvVisitor)
     }
 }
 
-impl Pvm {
-    /// Create a new instance of the Penumbra Version Manager.
+impl Penv {
+    /// Create a new instance of the Penumbra Environment Manager.
     pub fn new(home: Utf8PathBuf) -> Result<Self> {
         // read config file to fetch existing environments
-        let pvm_path = home.join("pvm.toml");
-        let metadata = fs::metadata(&pvm_path);
+        let penv_path = home.join("penv.toml");
+        let metadata = fs::metadata(&penv_path);
 
-        let pvm = if metadata.is_err() || !metadata.unwrap().is_file() {
+        let penv = if metadata.is_err() || !metadata.unwrap().is_file() {
             Self {
                 cache: Cache::new(home.clone())?,
                 downloader: Downloader::new("penumbra-zone/penumbra".to_string())?,
@@ -226,21 +226,21 @@ impl Pvm {
                 active_environment: None,
             }
         } else {
-            let pvm_contents = fs::read_to_string(pvm_path)?;
-            toml::from_str(&pvm_contents)?
+            let penv_contents = fs::read_to_string(penv_path)?;
+            toml::from_str(&penv_contents)?
         };
 
-        tracing::debug!(environments=?pvm.environments, installed_releases=?pvm.cache.data.installed_releases, "created pvm with environments");
-        Ok(pvm)
+        tracing::debug!(environments=?penv.environments, installed_releases=?penv.cache.data.installed_releases, "created penv with environments");
+        Ok(penv)
     }
 
     // TODO: delete this method and handle alternative repositories better
     pub fn new_from_repository(repository_name: String, home: Utf8PathBuf) -> Result<Self> {
         // read config file to fetch existing environments
-        let pvm_path = home.join("pvm.toml");
-        let metadata = fs::metadata(&pvm_path);
+        let penv_path = home.join("penv.toml");
+        let metadata = fs::metadata(&penv_path);
 
-        let pvm = if metadata.is_err() || !metadata.unwrap().is_file() {
+        let penv = if metadata.is_err() || !metadata.unwrap().is_file() {
             Self {
                 cache: Cache::new(home.clone())?,
                 downloader: Downloader::new(repository_name.clone())?,
@@ -252,12 +252,12 @@ impl Pvm {
                 active_environment: None,
             }
         } else {
-            let pvm_contents = fs::read_to_string(pvm_path)?;
-            toml::from_str(&pvm_contents)?
+            let penv_contents = fs::read_to_string(penv_path)?;
+            toml::from_str(&penv_contents)?
         };
 
-        tracing::debug!(environments=?pvm.environments, installed_releases=?pvm.cache.data.installed_releases, "created pvm with environments");
-        Ok(pvm)
+        tracing::debug!(environments=?penv.environments, installed_releases=?penv.cache.data.installed_releases, "created penv with environments");
+        Ok(penv)
     }
 
     pub fn delete_environment(&mut self, environment_alias: String) -> Result<()> {
@@ -282,7 +282,7 @@ impl Pvm {
 
         if self.active_environment == Some(environment.clone()) {
             return Err(anyhow!(
-                "refusing to delete active environment {}; perhaps you mean to `pvm deactivate` first",
+                "refusing to delete active environment {}; perhaps you mean to `penv deactivate` first",
                 environment_alias
             ));
         }
@@ -564,20 +564,20 @@ impl Pvm {
         Ok(())
     }
 
-    pub fn pvm_file_path(&self) -> Utf8PathBuf {
-        self.home_dir.join("pvm.toml")
+    pub fn penv_file_path(&self) -> Utf8PathBuf {
+        self.home_dir.join("penv.toml")
     }
 
     pub fn persist(&self) -> Result<()> {
         fs::create_dir_all(&self.home_dir)
             .with_context(|| format!("Failed to create home directory {}", self.home_dir))?;
 
-        let toml_pvm = toml::to_string(&self)?;
+        let toml_penv = toml::to_string(&self)?;
 
-        tracing::debug!(pvm_file_path=?self.pvm_file_path(),"create file");
+        tracing::debug!(penv_file_path=?self.penv_file_path(),"create file");
 
-        let mut file = File::create(self.pvm_file_path())?;
-        file.write_all(toml_pvm.as_bytes())?;
+        let mut file = File::create(self.penv_file_path())?;
+        file.write_all(toml_penv.as_bytes())?;
 
         tracing::debug!("persist cache");
         self.cache.persist()?;
@@ -681,7 +681,7 @@ mod tests {
     use semver::Version;
     use target_lexicon::Triple;
 
-    use crate::pvm::{
+    use crate::penv::{
         cache::cache::CacheData,
         release::{
             binary::InstalledBinaryRelease, git_repo::CheckoutMetadata, InstalledAsset,
@@ -692,7 +692,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn deserialize_pvm() {
+    fn deserialize_penv() {
         let cache_data = CacheData {
             installed_releases: vec![
                 InstalledRelease::GitCheckout(CheckoutMetadata {
@@ -714,7 +714,7 @@ mod tests {
                 .into(),
             ],
         };
-        let pvm = Pvm {
+        let penv = Penv {
             cache: Cache {
                 data: cache_data,
                 home: "/tmp/test".into(),
@@ -773,7 +773,7 @@ mod tests {
         };
 
         // Serialize to TOML string
-        eprintln!("{}", toml::to_string(&pvm).unwrap());
+        eprintln!("{}", toml::to_string(&penv).unwrap());
 
         // Example TOML string for deserialization
         let toml_str = r#"
@@ -834,8 +834,8 @@ mod tests {
         "#;
 
         // Deserialize from TOML string
-        let pvm = toml::from_str::<Pvm>(toml_str).unwrap();
-        assert!(pvm.environments.len() == 2);
-        assert!(pvm.active_environment.is_some());
+        let penv = toml::from_str::<Penv>(toml_str).unwrap();
+        assert!(penv.environments.len() == 2);
+        assert!(penv.active_environment.is_some());
     }
 }

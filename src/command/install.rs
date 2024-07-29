@@ -3,7 +3,7 @@ use camino::Utf8PathBuf;
 use clap::value_parser;
 use target_lexicon::Triple;
 
-use crate::pvm::{release::RepoOrVersionReq, Pvm};
+use crate::penv::{release::RepoOrVersionReq, Penv};
 
 // TODO: the cometbft version being used must be matched to the penumbra versions,
 // so it might be desirable to add support for managing cometbft installations here as well.
@@ -39,8 +39,8 @@ impl InstallCmd {
         let repository_name = &self.repository_name;
 
         println!("installing {}", self.penumbra_version);
-        let mut pvm = Pvm::new_from_repository(repository_name.clone(), home.clone())?;
-        pvm.install_release(self.penumbra_version.clone(), Triple::host())
+        let mut penv = Penv::new_from_repository(repository_name.clone(), home.clone())?;
+        penv.install_release(self.penumbra_version.clone(), Triple::host())
             .await?;
 
         Ok(())

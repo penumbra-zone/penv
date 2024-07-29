@@ -2128,6 +2128,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "penv"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "camino",
+ "clap",
+ "colored",
+ "directories",
+ "flate2",
+ "futures",
+ "gix",
+ "hex",
+ "indicatif",
+ "regex",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "target-lexicon",
+ "tempfile",
+ "tera",
+ "tokio",
+ "tokio-util",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2293,38 +2325,6 @@ checksum = "744a264d26b88a6a7e37cbad97953fa233b94d585236310bcbc88474b4092d79"
 dependencies = [
  "bytesize",
  "human_format",
-]
-
-[[package]]
-name = "pvm"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "camino",
- "clap",
- "colored",
- "directories",
- "flate2",
- "futures",
- "gix",
- "hex",
- "indicatif",
- "regex",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "target-lexicon",
- "tempfile",
- "tera",
- "tokio",
- "tokio-util",
- "toml",
- "tracing",
- "tracing-subscriber",
- "url",
 ]
 
 [[package]]

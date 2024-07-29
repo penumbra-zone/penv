@@ -166,7 +166,7 @@ pub(crate) fn extract_triple(filename: &str) -> Option<Triple> {
 
 #[cfg(test)]
 mod tests {
-    use crate::pvm::release::VersionReqOrLatest;
+    use crate::penv::release::VersionReqOrLatest;
 
     #[test]
     fn deserialize_version() {

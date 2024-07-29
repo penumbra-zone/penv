@@ -1,4 +1,4 @@
-# pvm, the Penumbra Version Manager
+# penv, the Penumbra Environment Manager
 
 ## Description
 
@@ -11,13 +11,13 @@ their state data to be compatible with new features and bug fixes. APIs also may
 between versions. For these reasons, using outdated versions of the Penumbra client software
 won't work against updated nodes.
 
-Additionally, node operators or developers may wish to test migration processes. `pvm` makes this
+Additionally, node operators or developers may wish to test migration processes. `penv` makes this
 easier by allowing users to set up isolated Penumbra environments, associating a particular version
 of software with configuration and data necessary to run Penumbra.
 
 ## Installation
 
-`pvm` works by setting up pre-command execution hooks in your shell to set the appropriate environment.
+`penv` works by setting up pre-command execution hooks in your shell to set the appropriate environment.
 
 Each shell will require its own installation process.
 
@@ -26,7 +26,7 @@ Each shell will require its own installation process.
 Add the following line at the end of the `~/.zshrc` file:
 
 ```shell
-eval "$(pvm hook zsh)"
+eval "$(penv hook zsh)"
 ```
 
 ### bash
@@ -39,14 +39,14 @@ eval "$(pvm hook bash)"
 
 ## Demo
 
-After installing the hook in your shell, you can begin using `pvm`.
+After installing the hook in your shell, you can begin using `penv`.
 
 ### Listing available versions
 
 You can check which versions are available to install:
 
 ```console
-$ pvm cache available 0.79
+$ penv cache available 0.79
 fetching available releases from https://api.github.com/repos/penumbra-zone/penumbra/releases
 0.79.2
 0.79.1
@@ -58,13 +58,13 @@ be displayed in <span style="color:green">_green_</span> and uninstalled version
 
 ### Installing Penumbra versions
 
-First, install a version of the Penumbra software using `pvm cache install VERSION`.
+First, install a version of the Penumbra software using `penv cache install VERSION`.
 The version is specified as a semver version requirement; the latest version on the
-repository matching the version requirement will be installed to pvm's installation
+repository matching the version requirement will be installed to penv's installation
 cache.
 
 ```console
-$ pvm install '0.79.0'
+$ penv install '0.79.0'
 installing ^0.79.0
 fetching available releases from https://api.github.com/repos/penumbra-zone/penumbra/releases
 downloading latest matching release: 0.79.2
@@ -85,7 +85,7 @@ installing latest matching release: 0.79.2
 You can verify which versions have been installed to the cache:
 
 ```console
-$ pvm cache list
+$ penv cache list
 0.79.2
 ```
 
@@ -96,10 +96,10 @@ This command also takes an optional semver version requirement to filter install
 Now that you've installed a version of the Penumbra software, you can
 configure a new environment using that version of the software.
 
-The basic format of the command is `pvm manage create ALIAS VERSION_REQUIREMENT GRPC_URL` followed by optional flags.
+The basic format of the command is `penv manage create ALIAS VERSION_REQUIREMENT GRPC_URL` followed by optional flags.
 
 ```console
-$ pvm manage create v0.79.x-localhost 0.79 http://localhost:26657 --client-only
+$ penv manage create v0.79.x-localhost 0.79 http://localhost:26657 --client-only
 created environment v0.79.x-localhost with pinned version 0.79.2
 ```
 
@@ -112,13 +112,13 @@ flag off if you also want `pd` node software to be configured in the environment
 To view the configured environments and their details:
 
 ```console
-$ pvm manage list --detailed
-EEnvironments:
+$ penv manage list --detailed
+Environments:
 Alias: v0.79.x-localhost
 GRPC URL: http://localhost:26657/
 Version Requirement: ^0.79
 Pinned Version: 0.79.2
-Root Directory: /Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost
+Root Directory: /Users/user/Library/Application Support/zone.penumbra.penv/environments/v0.79.x-localhost
 Include Node: false
 Active: false
 ```
@@ -131,37 +131,37 @@ be displayed in <span style="color:green">_green_</span> and inactive environmen
 You can activate a configured environment:
 
 ```console
-$ pvm which
+$ penv which
 no active environment set
 ```
 
 ```console
-$ pvm use v0.79.x-localhost
+$ penv use v0.79.x-localhost
 activating v0.79.x-localhost...
 activated
 ```
 
 ```console
-$ pvm which
+$ penv which
 v0.79.x-localhost
 
-$ pvm which --detailed
+$ penv which --detailed
 Alias: v0.79.x-localhost
 GRPC URL: http://localhost:26657/
 Version Requirement: ^0.79
 Pinned Version: 0.79.2
-Root Directory: /Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost
+Root Directory: /Users/user/Library/Application Support/zone.penumbra.penv/environments/v0.79.x-localhost
 Include Node: false
 ```
 
 Additionally, since the hook has been installed to your shell, necessary environment variables will be set:
 
 ```console
-$ echo $PVM_ACTIVE_ENVIRONMENT
+$ echo $PENV_ACTIVE_ENVIRONMENT
 v0.79.x-localhost
 
 $ echo $PENUMBRA_PCLI_HOME
-/Users/user/Library/Application Support/zone.penumbra.pvm/environments/v0.79.x-localhost/pcli
+/Users/user/Library/Application Support/zone.penumbra.penv/environments/v0.79.x-localhost/pcli
 ```
 
 And your `PATH` will be updated to point to the correct binary versions:
@@ -173,7 +173,7 @@ pcli 0.79.2
 
 ## Environment Variables
 
-`pvm` sets various environment variables.
+`penv` sets various environment variables.
 
 For example, to run `cometbft` after activating an environment, you can use the `COMETBFT_HOME` environment variable:
 
@@ -184,7 +184,7 @@ $ cometbft start --home $COMETBFT_HOME
 The entire list of environment variables is:
 
 ```
-PVM_ACTIVE_ENVIRONMENT
+PENV_ACTIVE_ENVIRONMENT
 PENUMBRA_PCLI_HOME
 PENUMBRA_PCLIENTD_HOME
 PENUMBRA_PD_HOME
@@ -195,22 +195,22 @@ COMETBFT_HOME
 
 ## Working With Git Checkouts
 
-You can also use `pvm` to create an environment based on a git checkout.
+You can also use `penv` to create an environment based on a git checkout.
 
 For example, to create a dev environment with a generated local devnet based on the `penumbra-zone/penumbra` GitHub repository:
 
 ```console
-$ pvm install 'git@github.com:penumbra-zone/penumbra.git'
+$ penv install 'git@github.com:penumbra-zone/penumbra.git'
 
 installing git@github.com:penumbra-zone/penumbra.git
 installing latest matching release: git@github.com:penumbra-zone/penumbra.git (git@github.com:penumbra-zone/penumbra.git)
-cloning repo git@github.com:penumbra-zone/penumbra.git to /Users/user/Library/Application Support/zone.penumbra.pvm/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8
+cloning repo git@github.com:penumbra-zone/penumbra.git to /Users/user/Library/Application Support/zone.penumbra.penv/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8
 fetch...
-Checking out into "/Users/user/Library/Application Support/zone.penumbra.pvm/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8" ...
+Checking out into "/Users/user/Library/Application Support/zone.penumbra.penv/checkouts/91734fec0f7dc59357c94a82abc0eb927ae4f07a151d10f280a189623c3af9e8" ...
 
-$ pvm manage create main_repo-devnet 'git@github.com:penumbra-zone/penumbra.git' http://localhost:8080 --generate-network
+$ penv manage create main_repo-devnet 'git@github.com:penumbra-zone/penumbra.git' http://localhost:8080 --generate-network
 
-created environment main_repo-devnet at /Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet pointing to git checkout git@github.com:penumbra-zone/penumbra.git (git@github.com:penumbra-zone/penumbra.git)
+created environment main_repo-devnet at /Users/user/Library/Application Support/zone.penumbra.penv/environments/main_repo-devnet pointing to git checkout git@github.com:penumbra-zone/penumbra.git (git@github.com:penumbra-zone/penumbra.git)
 ```
 
 When you activate the environment, your shell will be populated with `pcli`/`pclientd`/`pd` wrappers that build the corresponding binary from the git repository.
@@ -218,39 +218,39 @@ When you activate the environment, your shell will be populated with `pcli`/`pcl
 ```console
 $ which pcli
 
-/Users/user/Library/Application Support/zone.penumbra.pvm/bin/pcli
+/Users/user/Library/Application Support/zone.penumbra.penv/bin/pcli
 
-$ ls -la /Users/user/Library/Application\ Support/zone.penumbra.pvm/
+$ ls -la /Users/user/Library/Application\ Support/zone.penumbra.penv/
 
 total 32
 drwxr-xr-x   8 user staff   256 Jul 25 16:26 .
 drwx------+ 99 user staff  3168 Jul 25 16:19 ..
-lrwxr-xr-x   1 user staff    96 Jul 25 16:26 bin -> /Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/bin
+lrwxr-xr-x   1 user staff    96 Jul 25 16:26 bin -> /Users/user/Library/Application Support/zone.penumbra.penv/environments/main_repo-devnet/bin
 -rw-r--r--   1 user staff  5314 Jul 25 16:26 cache.toml
 drwxr-xr-x   3 user staff    96 Jul 25 16:20 checkouts
 drwxr-xr-x   4 user staff   128 Jul 25 16:21 environments
--rw-r--r--   1 user staff  6671 Jul 25 16:26 pvm.toml
+-rw-r--r--   1 user staff  6671 Jul 25 16:26 penv.toml
 drwxr-xr-x   3 user staff    96 Jul 25 16:20 versions
 
-$ cat /Users/user/Library/Application\ Support/zone.penumbra.pvm/environments/main_repo-devnet/bin/pcli
+$ cat /Users/user/Library/Application\ Support/zone.penumbra.penv/environments/main_repo-devnet/bin/pcli
 
-exec cargo run --manifest-path="/Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/checkout/Cargo.toml" --release --bin pcli -- "$@"
+exec cargo run --manifest-path="/Users/user/Library/Application Support/zone.penumbra.penv/environments/main_repo-devnet/checkout/Cargo.toml" --release --bin pcli -- "$@"
 ```
 
-The working git repository will be placed in the `checkout` subdirectory of the relevant environment, for example: `/Users/user/Library/Application Support/zone.penumbra.pvm/environments/main_repo-devnet/checkout`.
+The working git repository will be placed in the `checkout` subdirectory of the relevant environment, for example: `/Users/user/Library/Application Support/zone.penumbra.penv/environments/main_repo-devnet/checkout`.
 
 ## Security
 
-If you believe you've found a security-related issue with pvm,
+If you believe you've found a security-related issue with penv,
 please disclose responsibly by contacting the Penumbra Labs team at
 security@penumbralabs.xyz.
 
 ## License
 
-By contributing to pvm you agree that your contributions will be licensed
+By contributing to penv you agree that your contributions will be licensed
 under the terms of both the [LICENSE-Apache-2.0](LICENSE-Apache-2.0) and the
 [LICENSE-MIT](LICENSE-MIT) files in the root of this source tree.
 
-If you're using pvm you are free to choose one of the provided licenses:
+If you're using penv you are free to choose one of the provided licenses:
 
 `SPDX-License-Identifier: MIT OR Apache-2.0`

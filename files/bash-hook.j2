@@ -1,10 +1,10 @@
-_pvm_hook() {
+_penv_hook() {
   local previous_exit_status=$?;
   trap -- '' SIGINT;
-  eval "$("{{ pvm_executable }}" env bash)";
+  eval "$("{{ penv_executable }}" hook bash)";
   trap - SIGINT;
   return $previous_exit_status;
 };
-if ! [[ "${PROMPT_COMMAND:-}" =~ _pvm_hook ]]; then
-  PROMPT_COMMAND="_pvm_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+if ! [[ "${PROMPT_COMMAND:-}" =~ _penv_hook ]]; then
+  PROMPT_COMMAND="_penv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi

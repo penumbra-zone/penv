@@ -1,5 +1,5 @@
 [package]
-name = "pvm"
+name = "penv"
 version = "0.1.0"
 edition = "2021"
 
@@ -67,7 +67,7 @@ shared-version = true
 # Format spec for the auto-generated git tag, based on new version for release.
 tag-name = "v{{version}}"
 # The message is required for an annotated tag to be created.
-tag-message                = "pvm version {{version}}"
+tag-message                = "penv version {{version}}"
 pre-release-commit-message = "chore: release version {{version}}"
 # Don't push to crates.io; we're still using git branches for velocity.
 publish = false
@@ -80,7 +80,7 @@ push = false
 authors    = ["Penumbra Labs <team@penumbra.zone>"]
 edition    = "2021"
 version    = "0.1.0"
-repository = "https://github.com/penumbra-zone/pvm"
+repository = "https://github.com/penumbra-zone/penv"
 homepage   = "https://penumbra.zone"
 license    = "MIT OR Apache-2.0"
 

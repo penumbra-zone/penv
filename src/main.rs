@@ -5,8 +5,8 @@ use std::fs;
 use anyhow::{Context as _, Result};
 use clap::Parser;
 
-use pvm::Pvm;
-use pvm::{command::Command, opt::Opt};
+use penv::Penv;
+use penv::{command::Command, opt::Opt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
 
     opt.init_tracing();
 
-    // Ensure that the pvm home dir exists, in case this is a cold start
+    // Ensure that the penv home dir exists, in case this is a cold start
     fs::create_dir_all(&opt.home)
         .with_context(|| format!("Failed to create home directory {}", opt.home))?;
 
@@ -37,10 +37,10 @@ async fn main() -> Result<()> {
         }
         Command::Deactivate => {
             println!("deactivating active environment...");
-            let mut pvm = Pvm::new(opt.home.clone())?;
-            pvm.active_environment = None;
+            let mut penv = Penv::new(opt.home.clone())?;
+            penv.active_environment = None;
             // Unset the symlink
-            let link = pvm.home_dir.join("bin");
+            let link = penv.home_dir.join("bin");
             let link_metadata = fs::metadata(link.clone());
             tracing::debug!("link_metadata: {:?}", link_metadata);
             if let Ok(link_metadata) = link_metadata {
@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
             } else {
                 tracing::debug!("symlink path {} does not exist", link);
             }
-            pvm.persist()?;
+            penv.persist()?;
             println!("deactivated");
         }
     }

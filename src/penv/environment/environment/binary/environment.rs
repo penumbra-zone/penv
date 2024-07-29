@@ -9,7 +9,7 @@ use camino::Utf8PathBuf;
 use semver::Version;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::pvm::{
+use crate::penv::{
     cache::cache::Cache,
     environment::{
         create_symlink, Binary as _, EnvironmentMetadata, EnvironmentTrait, ManagedFile,
@@ -290,7 +290,7 @@ mod tests {
 
     use semver::Version;
 
-    use crate::pvm::release::VersionReqOrLatest;
+    use crate::penv::release::VersionReqOrLatest;
 
     use super::*;
 
