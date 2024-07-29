@@ -34,7 +34,7 @@ eval "$(penv hook zsh)"
 Add the following line at the end of the `~/.bashrc` file:
 
 ```shell
-eval "$(pvm hook bash)"
+eval "$(penv hook bash)"
 ```
 
 ## Demo
