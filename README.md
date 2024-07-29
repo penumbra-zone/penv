@@ -29,6 +29,14 @@ Add the following line at the end of the `~/.zshrc` file:
 eval "$(pvm hook zsh)"
 ```
 
+### bash
+
+Add the following line at the end of the `~/.bashrc` file:
+
+```shell
+eval "$(pvm hook bash)"
+```
+
 ## Demo
 
 After installing the hook in your shell, you can begin using `pvm`.
