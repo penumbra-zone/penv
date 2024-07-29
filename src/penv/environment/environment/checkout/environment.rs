@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs::{self, File};
 use std::io::{self, Write as _};
+#[cfg(any(target_os = "macos", target_os = "unix"))]
 use std::os::unix::fs::PermissionsExt as _;
 use std::path::Path;
 use std::sync::Arc;
@@ -95,10 +96,13 @@ impl EnvironmentTrait for CheckoutEnvironment {
         // Write the rendered pcli wrapper to the pcli binary location
         pcli_file.write_all(pcliwrapper.as_bytes())?;
 
-        let pcli_metadata = fs::metadata(&pcli_binary.path())?;
-        let mut pcli_permissions = pcli_metadata.permissions();
-        pcli_permissions.set_mode(pcli_permissions.mode() | 0o111); // Add executable bit
-        fs::set_permissions(&pcli_binary.path(), pcli_permissions)?;
+        #[cfg(any(target_os = "macos", target_os = "unix"))]
+        {
+            let pcli_metadata = fs::metadata(&pcli_binary.path())?;
+            let mut pcli_permissions = pcli_metadata.permissions();
+            pcli_permissions.set_mode(pcli_permissions.mode() | 0o111); // Add executable bit
+            fs::set_permissions(&pcli_binary.path(), pcli_permissions)?;
+        }
 
         let pclientdwrapper_template = include_str!("../../../../../files/zsh-pclientdwrapper.j2");
         let pclientdwrapper = tera::Tera::one_off(pclientdwrapper_template, &context, false)?;
@@ -108,10 +112,13 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
         pclientd_file.write_all(pclientdwrapper.as_bytes())?;
 
-        let pclientd_metadata = fs::metadata(&pclientd_binary.path())?;
-        let mut pclientd_permissions = pclientd_metadata.permissions();
-        pclientd_permissions.set_mode(pclientd_permissions.mode() | 0o111); // Add executable bit
-        fs::set_permissions(&pclientd_binary.path(), pclientd_permissions)?;
+        #[cfg(any(target_os = "macos", target_os = "unix"))]
+        {
+            let pclientd_metadata = fs::metadata(&pclientd_binary.path())?;
+            let mut pclientd_permissions = pclientd_metadata.permissions();
+            pclientd_permissions.set_mode(pclientd_permissions.mode() | 0o111); // Add executable bit
+            fs::set_permissions(&pclientd_binary.path(), pclientd_permissions)?;
+        }
 
         if !self.metadata().client_only {
             context.insert("create_pd", "true");
@@ -124,10 +131,13 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
             pd_file.write_all(pdwrapper.as_bytes())?;
 
-            let pd_metadata = fs::metadata(&pd_binary.path())?;
-            let mut pd_permissions = pd_metadata.permissions();
-            pd_permissions.set_mode(pd_permissions.mode() | 0o111); // Add executable bit
-            fs::set_permissions(&pd_binary.path(), pd_permissions)?;
+            #[cfg(any(target_os = "macos", target_os = "unix"))]
+            {
+                let pd_metadata = fs::metadata(&pd_binary.path())?;
+                let mut pd_permissions = pd_metadata.permissions();
+                pd_permissions.set_mode(pd_permissions.mode() | 0o111); // Add executable bit
+                fs::set_permissions(&pd_binary.path(), pd_permissions)?;
+            }
         }
 
         // If the environment is set to generate a local dev network,

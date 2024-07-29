@@ -1,13 +1,15 @@
 use anyhow::{anyhow, Result};
 use std::fmt::{self, Display};
+#[cfg(any(target_os = "macos", target_os = "unix"))]
 use std::os::unix::fs::symlink as unix_symlink;
+#[cfg(any(target_os = "macos", target_os = "unix"))]
+use std::os::unix::fs::PermissionsExt as _;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
 use std::sync::Arc;
 use std::{
     fs,
     ops::{Deref, DerefMut},
-    os::unix::fs::PermissionsExt as _,
 };
 
 use camino::Utf8PathBuf;
@@ -175,16 +177,7 @@ pub fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
         return Ok(());
     }
 
-    #[cfg(target_os = "macos")]
-    {
-        tracing::debug!("creating macos symlink from {} to {}", target, link);
-        unix_symlink(target, link)?;
-
-        let mut permissions = metadata.permissions();
-        permissions.set_mode(permissions.mode() | 0o111); // Add executable bit
-        fs::set_permissions(link, permissions)?;
-    }
-    #[cfg(target_os = "unix")]
+    #[cfg(any(target_os = "macos", target_os = "unix"))]
     {
         tracing::debug!("creating unix symlink from {} to {}", target, link);
         unix_symlink(target, link)?;
