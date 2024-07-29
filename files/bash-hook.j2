@@ -1,7 +1,7 @@
 _pvm_hook() {
   local previous_exit_status=$?;
   trap -- '' SIGINT;
-  eval "$("{{ pvm_executable }}" export bash)";
+  eval "$("{{ pvm_executable }}" hook bash)";
   trap - SIGINT;
   return $previous_exit_status;
 };
