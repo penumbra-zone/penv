@@ -1,9 +1,10 @@
 name: Rust CI
 on:
-  pull_request:
-    # # Don't run Rust tests if only docs changed.
-    # paths-ignore:
-    #   - 'docs/**'
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
