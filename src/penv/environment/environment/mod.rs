@@ -1,6 +1,9 @@
 use anyhow::{anyhow, Result};
 use std::fmt::{self, Display};
 #[cfg(target_family = "unix")]
+{
+    use std::os::unix::fs::{symlink as unix_symlink, PermissionsExt as _};
+}
 use std::os::unix::fs::symlink as unix_symlink;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt as _;
