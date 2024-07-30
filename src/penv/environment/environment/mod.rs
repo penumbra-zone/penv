@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
 use std::fmt::{self, Display};
-#[cfg(any(target_os = "macos", target_os = "unix"))]
+#[cfg(target_family = "unix")]
 use std::os::unix::fs::symlink as unix_symlink;
-#[cfg(any(target_os = "macos", target_os = "unix"))]
+#[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt as _;
-#[cfg(target_os = "windows")]
+#[cfg(target_family = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
 use std::sync::Arc;
 use std::{
@@ -177,7 +177,7 @@ pub fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
         return Ok(());
     }
 
-    #[cfg(any(target_os = "macos", target_os = "unix"))]
+    #[cfg(target_family = "unix")]
     {
         tracing::debug!("creating unix symlink from {} to {}", target, link);
         unix_symlink(target, link)?;
@@ -186,7 +186,7 @@ pub fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
         permissions.set_mode(permissions.mode() | 0o111); // Add executable bit
         fs::set_permissions(link, permissions)?;
     }
-    #[cfg(target_os = "windows")]
+    #[cfg(target_family = "windows")]
     {
         tracing::debug!("creating windows symlink from {} to {}", target, link);
         windows_symlink_file(target, link)?;
