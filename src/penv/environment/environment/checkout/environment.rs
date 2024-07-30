@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs::{self, File};
 use std::io::{self, Write as _};
-#[cfg(any(target_os = "macos", target_os = "unix"))]
+#[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt as _;
 use std::path::Path;
 use std::sync::Arc;
@@ -96,7 +96,7 @@ impl EnvironmentTrait for CheckoutEnvironment {
         // Write the rendered pcli wrapper to the pcli binary location
         pcli_file.write_all(pcliwrapper.as_bytes())?;
 
-        #[cfg(any(target_os = "macos", target_os = "unix"))]
+        #[cfg(target_family = "unix")]
         {
             let pcli_metadata = fs::metadata(&pcli_binary.path())?;
             let mut pcli_permissions = pcli_metadata.permissions();
@@ -112,7 +112,7 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
         pclientd_file.write_all(pclientdwrapper.as_bytes())?;
 
-        #[cfg(any(target_os = "macos", target_os = "unix"))]
+        #[cfg(target_family = "unix")]
         {
             let pclientd_metadata = fs::metadata(&pclientd_binary.path())?;
             let mut pclientd_permissions = pclientd_metadata.permissions();
@@ -131,7 +131,7 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
             pd_file.write_all(pdwrapper.as_bytes())?;
 
-            #[cfg(any(target_os = "macos", target_os = "unix"))]
+            #[cfg(target_family = "unix")]
             {
                 let pd_metadata = fs::metadata(&pd_binary.path())?;
                 let mut pd_permissions = pd_metadata.permissions();
