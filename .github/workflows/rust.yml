@@ -1,4 +1,4 @@
-name: Rust CI
+name: Rust
 on:
   pull_request: {}
 
@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test Suite
+    name: tests
     runs-on: buildjet-16vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
           CARGO_TERM_COLOR: always
 
   fmt:
-    name: Rustfmt
+    name: fmt
     runs-on: buildjet-8vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
