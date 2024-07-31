@@ -1,7 +1,7 @@
 _penv_hook() {
   local previous_exit_status=$?;
   trap -- '' SIGINT;
-  eval "$("{{ penv_executable }}" hook bash)";
+  eval "$("{{ penv_executable }}" env bash)";
   trap - SIGINT;
   return $previous_exit_status;
 };
