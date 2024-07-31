@@ -1,12 +1,7 @@
 use anyhow::{anyhow, Result};
 use std::fmt::{self, Display};
 #[cfg(target_family = "unix")]
-{
-    use std::os::unix::fs::{symlink as unix_symlink, PermissionsExt as _};
-}
-use std::os::unix::fs::symlink as unix_symlink;
-#[cfg(target_family = "unix")]
-use std::os::unix::fs::PermissionsExt as _;
+use std::os::unix::fs::{symlink as unix_symlink, PermissionsExt as _};
 #[cfg(target_family = "windows")]
 use std::os::windows::fs::symlink_file as windows_symlink_file;
 use std::sync::Arc;
