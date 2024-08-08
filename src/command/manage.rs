@@ -57,18 +57,18 @@ pub struct CreateCmd {
     /// Specified as a semver version requirement, i.e. "0.79" will use the latest 0.79.x release.
     ///
     /// If a matching version is not installed, penv will attempt to install it.
-    #[clap(value_parser = value_parser!(RepoOrVersionReq))]
+    #[clap(long, value_parser = value_parser!(RepoOrVersionReq))]
     penumbra_version: RepoOrVersionReq,
     /// The GRPC URL to use to connect to a fullnode.
     ///
     /// If pd configs are also being generated, this should typically be localhost:8080
-    #[clap(parse(try_from_str = Url::parse))]
+    #[clap(long, parse(try_from_str = Url::parse))]
     grpc_url: Url,
     /// The URL to use for `pd network join` operations, aka the cometBFT RPC endpoint.
     ///
     /// Typically this runs on port 26657. If not supplied, this will
     /// default to the GRPC URL with the port changed to 26657 and HTTP protocol.
-    #[clap(parse(try_from_str = Url::parse))]
+    #[clap(long, parse(try_from_str = Url::parse))]
     pd_join_url: Option<Url>,
     /// The GitHub repository to fetch releases from if an installation is necessary.
     ///
