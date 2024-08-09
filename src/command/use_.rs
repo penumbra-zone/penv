@@ -14,6 +14,8 @@ impl UseCmd {
         let environment_alias = &self.environment_alias;
         println!("activating {}...", environment_alias);
         let mut penv = Penv::new(home.clone())?;
+        // First, deactivate the current environment
+        penv.deactivate()?;
         penv.activate(environment_alias.to_string())?;
         penv.persist()?;
 

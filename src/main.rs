@@ -38,23 +38,7 @@ async fn main() -> Result<()> {
         Command::Deactivate => {
             println!("deactivating active environment...");
             let mut penv = Penv::new(opt.home.clone())?;
-            penv.active_environment = None;
-            // Unset the symlink
-            let link = penv.home_dir.join("bin");
-            let link_metadata = fs::metadata(link.clone());
-            tracing::debug!("link_metadata: {:?}", link_metadata);
-            if let Ok(link_metadata) = link_metadata {
-                if link_metadata.is_symlink() || link_metadata.is_file() {
-                    tracing::debug!("removing symlink");
-                    fs::remove_file(link)?;
-                } else if link_metadata.is_dir() {
-                    tracing::debug!("removing symlink");
-                    fs::remove_dir_all(link)?;
-                }
-            } else {
-                tracing::debug!("symlink path {} does not exist", link);
-            }
-            penv.persist()?;
+            penv.deactivate()?;
             println!("deactivated");
         }
     }
