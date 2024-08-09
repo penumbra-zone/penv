@@ -260,6 +260,27 @@ impl Penv {
         Ok(penv)
     }
 
+    /// Deactivate the current environment, removing any symlinks.
+    pub fn deactivate(&mut self) -> Result<()> {
+        self.active_environment = None;
+        // Unset the symlink
+        let link = self.home_dir.join("bin");
+        let link_metadata = fs::metadata(link.clone());
+        tracing::debug!("link_metadata: {:?}", link_metadata);
+        if let Ok(link_metadata) = link_metadata {
+            if link_metadata.is_symlink() || link_metadata.is_file() {
+                tracing::debug!("removing symlink");
+                fs::remove_file(link)?;
+            } else if link_metadata.is_dir() {
+                tracing::debug!("removing symlink");
+                fs::remove_dir_all(link)?;
+            }
+        } else {
+            tracing::debug!("symlink path {} does not exist", link);
+        }
+        self.persist()
+    }
+
     pub fn delete_environment(&mut self, environment_alias: String) -> Result<()> {
         if !self
             .environments
