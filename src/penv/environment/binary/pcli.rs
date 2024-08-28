@@ -25,6 +25,18 @@ fn extract_seed_phrase(input: &str) -> Option<String> {
     None
 }
 
+fn extract_address(input: &str) -> Option<String> {
+    let pattern = r"^(penumbra1.*)\n$";
+    let re = Regex::new(pattern).unwrap();
+
+    // Search for the address in the input string
+    if let Some(captures) = re.captures(input) {
+        return captures.get(1).map(|m| m.as_str().to_string());
+    }
+
+    None
+}
+
 impl PcliBinary {
     fn pcli_data_dir(&self) -> Utf8PathBuf {
         self.root_dir.join("pcli")
@@ -59,6 +71,31 @@ impl Binary for PcliBinary {
             // which is not always great
             tracing::debug!(?stdout, "command output");
             Ok(extract_seed_phrase(&stdout).context("Failed to extract seed phrase")?)
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Err(anyhow!("Command failed with error:\n{}", stderr))
+        }
+    }
+}
+
+impl PcliBinary {
+    /// Returns the address associated with the given index, as a String.
+    pub fn get_address(&self, index: u64) -> Result<String> {
+        let pcli_args = vec![
+            "--home".to_string(),
+            self.pcli_data_dir().to_string(),
+            "view".to_string(),
+            "address".to_string(),
+            index.to_string(),
+        ];
+        // Execute the pcli binary with the given arguments
+        tracing::debug!(path=?self.path(), args=?pcli_args, "executing pcli binary");
+        let output = Command::new(self.path()).args(pcli_args).output()?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            tracing::debug!(?stdout, "command output");
+            Ok(extract_address(&stdout).context("Failed to extract address")?)
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             Err(anyhow!("Command failed with error:\n{}", stderr))

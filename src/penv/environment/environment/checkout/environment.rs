@@ -148,7 +148,7 @@ impl EnvironmentTrait for CheckoutEnvironment {
         tracing::debug!("seed phrase: {}", seed_phrase);
         let pclientd_binary = self.get_pclientd_binary();
         pclientd_binary.initialize(Some(HashMap::from([(
-            // pass the seed phrase here to avoid keeping in memory long-term
+            // pass the seed phrase here to avoid keeping in memory
             "seed_phrase".to_string(),
             seed_phrase,
         )])))?;
@@ -165,6 +165,11 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
             if self.metadata().generate_network {
                 pd_configs.insert("generate_network".to_string(), "true".to_string());
+
+                // Generated dev networks include a default allocation for convenience.
+                // Fetch the 0-index address of the environment's pcli
+                let address = pcli_binary.get_address(0)?;
+                pd_configs.insert("allocation_address".to_string(), address);
             }
 
             pd_binary.initialize(Some(pd_configs))?;
