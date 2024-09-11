@@ -79,7 +79,7 @@ tag = true
 push = false
 
 [workspace.package]
-authors    = ["Penumbra Labs <team@penumbra.zone>"]
+authors    = ["Penumbra Labs <team@penumbralabs.xyz"]
 edition    = "2021"
 version    = "0.1.0"
 repository = "https://github.com/penumbra-zone/penv"
