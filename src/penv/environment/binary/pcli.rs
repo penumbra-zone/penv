@@ -38,7 +38,7 @@ fn extract_address(input: &str) -> Option<String> {
 }
 
 impl PcliBinary {
-    fn pcli_data_dir(&self) -> Utf8PathBuf {
+    pub fn pcli_data_dir(&self) -> Utf8PathBuf {
         self.root_dir.join("pcli")
     }
 }

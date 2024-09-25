@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use camino::Utf8PathBuf;
 use clap::value_parser;
 use colored::Colorize;
@@ -39,6 +39,8 @@ pub enum ManageTopSubCmd {
     /// List all configured Penumbra environments.
     #[clap(display_order = 600)]
     List(ListCmd),
+    /// Reset the application state of an environment.
+    Reset(ResetCmd),
 }
 
 // TODO: it would be extremely useful to create an environment that can run
@@ -124,6 +126,19 @@ pub struct InfoCmd {
     /// The alias of the Penumbra environment to print info about.
     #[clap(display_order = 100)]
     environment_alias: String,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct ResetCmd {
+    /// The alias of the Penumbra environment to be reset.
+    #[clap(display_order = 100)]
+    environment_alias: String,
+    /// Disable resetting pcli and pclientd state.
+    #[clap(long)]
+    leave_client_state: bool,
+    /// Disable resetting pd state.
+    #[clap(long)]
+    leave_node_state: bool,
 }
 
 impl ManageCmd {
@@ -238,7 +253,30 @@ impl ManageCmd {
 
                 Ok(())
             }
-            _ => Err(anyhow!("unimplemented")),
+            ManageCmd {
+                subcmd:
+                    ManageTopSubCmd::Reset(ResetCmd {
+                        environment_alias,
+                        leave_client_state,
+                        leave_node_state,
+                    }),
+            } => {
+                let mut penv = Penv::new(home.clone())?;
+
+                penv.reset_environment(
+                    environment_alias.clone(),
+                    leave_client_state.clone(),
+                    leave_node_state.clone(),
+                )?;
+
+                Ok(())
+            }
+            &ManageCmd {
+                subcmd: ManageTopSubCmd::Rename(_),
+            }
+            | &ManageCmd {
+                subcmd: ManageTopSubCmd::Upgrade(_),
+            } => unimplemented!(),
         }
     }
 }

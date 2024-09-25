@@ -2,6 +2,7 @@ use std::{
     fmt,
     fs::{self, File},
     io::Write as _,
+    process::Command,
     sync::Arc,
 };
 
@@ -282,24 +283,16 @@ impl Penv {
     }
 
     pub fn delete_environment(&mut self, environment_alias: String) -> Result<()> {
-        if !self
-            .environments
-            .iter()
-            .any(|e| e.metadata().alias == environment_alias)
-        {
+        // Get the matching environment
+        let environment = self.environments.get_environment(&environment_alias);
+        if environment.is_none() {
             return Err(anyhow!(
                 "Environment with alias {} does not exist",
                 environment_alias
             ));
         }
 
-        // Get the matching environment
-        // TODO: move this into an impl on Environments
-        let environment = self
-            .environments
-            .iter()
-            .find(|e| e.metadata().alias == environment_alias)
-            .unwrap();
+        let environment = environment.unwrap();
 
         if self.active_environment == Some(environment.clone()) {
             return Err(anyhow!(
@@ -323,6 +316,106 @@ impl Penv {
         self.persist()?;
 
         println!("deleted environment {}", environment_alias);
+
+        Ok(())
+    }
+
+    pub fn reset_environment(
+        &mut self,
+        environment_alias: String,
+        leave_client_state: bool,
+        leave_node_state: bool,
+    ) -> Result<()> {
+        // Get the matching environment
+        let environment = self.environments.get_environment(&environment_alias);
+        if environment.is_none() {
+            return Err(anyhow!(
+                "Environment with alias {} does not exist",
+                environment_alias
+            ));
+        }
+
+        let environment = environment.unwrap();
+
+        let env_path = &environment.path();
+
+        // TODO: move this to an implementation on the binaries,
+        // maybe a trait implementation.
+        if !environment.metadata().client_only && !leave_node_state {
+            // TODO: support multiple nodes
+            // Why not use the `pd unsafe-reset-all` here?
+            let node_dir = env_path.join("network_data").join("node0");
+            let cometbft_data_dir = node_dir.join("cometbft").join("data");
+            let pd_dir = node_dir.join("pd");
+
+            let state_db_dir = cometbft_data_dir.join("state.db");
+            if state_db_dir.exists() {
+                tracing::debug!("removing data directory: {}", state_db_dir);
+                std::fs::remove_dir_all(&state_db_dir)?;
+            }
+
+            let tx_index_db_dir = cometbft_data_dir.join("tx_index.db");
+            if tx_index_db_dir.exists() {
+                tracing::debug!("removing data directory: {}", tx_index_db_dir);
+                std::fs::remove_dir_all(&tx_index_db_dir)?;
+            }
+
+            let blockstore_db_dir = cometbft_data_dir.join("blockstore.db");
+            if blockstore_db_dir.exists() {
+                tracing::debug!("removing data directory: {}", blockstore_db_dir);
+                std::fs::remove_dir_all(&blockstore_db_dir)?;
+            }
+
+            let cs_wal_dir = cometbft_data_dir.join("cs.wal");
+            if cs_wal_dir.exists() {
+                tracing::debug!("removing data directory: {}", cs_wal_dir);
+                std::fs::remove_dir_all(&cs_wal_dir)?;
+            }
+
+            let evidence_db_dir = cometbft_data_dir.join("evidence.db");
+            if evidence_db_dir.exists() {
+                tracing::debug!("removing data directory: {}", evidence_db_dir);
+                std::fs::remove_dir_all(&evidence_db_dir)?;
+            }
+
+            let rocksdb_dir = pd_dir.join("rocksdb");
+            if rocksdb_dir.exists() {
+                tracing::debug!("removing data directory: {}", rocksdb_dir);
+                std::fs::remove_dir_all(&rocksdb_dir)?;
+            }
+
+            let contents = "{}";
+            let priv_validator_state = cometbft_data_dir.join("priv_validator_state.json");
+            fs::write(priv_validator_state, contents)
+                .context("Unable to write priv_validator_state.json")?;
+        }
+
+        if !leave_client_state {
+            let pcli_bin = environment.get_pcli_binary();
+
+            let pcli_args = vec![
+                "--home".to_string(),
+                pcli_bin.pcli_data_dir().to_string(),
+                "view".to_string(),
+                "reset".to_string(),
+            ];
+            // Execute the pcli binary with the given arguments
+            tracing::debug!(path=?pcli_bin.path(), args=?pcli_args, "executing pcli binary");
+            let output = Command::new(pcli_bin.path()).args(pcli_args).output()?;
+
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                tracing::debug!(?stdout, "command output");
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(anyhow!("Command failed with error:\n{}", stderr));
+            }
+        }
+
+        // Persist the updated state
+        self.persist()?;
+
+        println!("reset environment {}", environment_alias);
 
         Ok(())
     }
