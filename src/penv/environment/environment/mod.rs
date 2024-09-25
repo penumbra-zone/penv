@@ -192,3 +192,12 @@ pub fn create_symlink(target: &Utf8PathBuf, link: &Utf8PathBuf) -> Result<()> {
 
     Ok(())
 }
+
+impl Environments {
+    pub fn get_environment(&self, environment_alias: &str) -> Option<Arc<Environment>> {
+        self.environments
+            .iter()
+            .find(|e| e.metadata().alias == environment_alias)
+            .map(|e| e.clone())
+    }
+}
