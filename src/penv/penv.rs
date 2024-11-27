@@ -8,6 +8,7 @@ use std::{
 
 use anyhow::{anyhow, Context as _, Result};
 use camino::Utf8PathBuf;
+use semver::Version;
 use serde::{
     de::{self, MapAccess, Visitor},
     ser::SerializeStruct as _,
@@ -730,6 +731,52 @@ impl Penv {
         .context("error creating pcli symlink")?;
 
         Ok(environment)
+    }
+
+    pub fn replace_version(
+        &mut self,
+        environment_alias: String,
+        new_version: Version,
+    ) -> Result<()> {
+        let mut environment = self
+            .environments
+            .iter()
+            .find(|e| e.metadata().alias == environment_alias)
+            .ok_or_else(|| anyhow!("Environment with alias {} not found", environment_alias))?
+            .clone();
+
+        let e = Arc::make_mut(&mut environment);
+
+        match *e {
+            Environment::BinaryEnvironment(ref mut e) => {
+                e.pinned_version = new_version;
+            }
+            Environment::CheckoutEnvironment(_) => {
+                return Err(anyhow!("Cannot replace version for a checkout environment"));
+            }
+        }
+
+        let e = Arc::new(e.clone());
+
+        // Remove the environment from the environment list
+        self.environments
+            .retain(|e| e.metadata().alias != environment_alias);
+
+        // Update the stored environment within penv
+        if let Some(active) = &self.active_environment {
+            if active.as_ref().metadata().alias == environment_alias {
+                self.active_environment = Some(e.clone());
+            }
+        }
+
+        self.environments.push(e.clone());
+
+        self.persist()?;
+
+        environment.remove_symlinks()?;
+        environment.create_symlinks(&self.cache)?;
+
+        Ok(())
     }
 
     pub fn path_string(&self) -> String {

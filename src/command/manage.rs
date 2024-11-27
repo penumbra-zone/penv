@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 use clap::value_parser;
 use colored::Colorize;
@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::penv::{
     environment::{Environment, EnvironmentTrait as _, ManagedFile as _},
-    release::RepoOrVersionReq,
+    release::{InstalledRelease, RepoOrVersionReq},
     Penv,
 };
 
@@ -119,6 +119,11 @@ pub struct UpgradeCmd {
     /// The alias of the Penumbra environment to be upgraded.
     #[clap(display_order = 100)]
     environment_alias: String,
+    /// The GitHub repository to fetch releases from.
+    ///
+    /// Defaults to "penumbra-zone/penumbra"
+    #[clap(long, default_value = "penumbra-zone/penumbra")]
+    repository_name: String,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -271,11 +276,76 @@ impl ManageCmd {
 
                 Ok(())
             }
+            ManageCmd {
+                subcmd:
+                    ManageTopSubCmd::Upgrade(UpgradeCmd {
+                        environment_alias,
+                        repository_name,
+                    }),
+            } => {
+                let mut penv = Penv::new_from_repository(repository_name.clone(), home.clone())?;
+
+                let environment = penv.environments.get_environment(&environment_alias);
+                if environment.is_none() {
+                    return Err(anyhow!(
+                        "Environment with alias {} does not exist",
+                        environment_alias
+                    ));
+                }
+
+                let environment = environment.unwrap();
+
+                let (penumbra_version, pinned_version) = match *environment {
+                    Environment::BinaryEnvironment(ref env) => (
+                        RepoOrVersionReq::VersionReqOrLatest(env.version_requirement.clone()),
+                        env.pinned_version.clone(),
+                    ),
+                    Environment::CheckoutEnvironment(ref _env) => {
+                        panic!("checkout environments are not supported for upgrades")
+                    }
+                };
+
+                // Find the best matching version
+                let cache = &penv.cache;
+                let matching_installed_version = match cache.find_best_match(&penumbra_version) {
+                    Some(installed_version) => installed_version,
+                    None => {
+                        // TODO: allow auto-installing here
+                        return Err(anyhow!(
+                            "No installed version found for version requirement {}",
+                            penumbra_version
+                        ));
+                    }
+                };
+
+                match *matching_installed_version {
+                    InstalledRelease::GitCheckout(ref _release) => {
+                        unreachable!("git checkout environments are not supported for upgrades")
+                    }
+                    InstalledRelease::Binary(ref matching_installed_version) => {
+                        if matching_installed_version.version == pinned_version {
+                            println!(
+                                "Environment {}'s pinned version {} is the latest installed version matching version requirement {}",
+                                environment_alias, pinned_version, penumbra_version
+                            );
+                            return Ok(());
+                        }
+
+                        println!(
+                            "Updating environment {}'s pinned version from {} to the latest installed version {}",
+                            environment_alias, pinned_version, matching_installed_version.version
+                        );
+                        penv.replace_version(
+                            environment_alias.clone(),
+                            matching_installed_version.version.clone(),
+                        )?;
+                        penv.persist()?;
+                    }
+                }
+                Ok(())
+            }
             &ManageCmd {
                 subcmd: ManageTopSubCmd::Rename(_),
-            }
-            | &ManageCmd {
-                subcmd: ManageTopSubCmd::Upgrade(_),
             } => unimplemented!(),
         }
     }

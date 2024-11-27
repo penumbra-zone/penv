@@ -196,4 +196,9 @@ impl EnvironmentTrait for CheckoutEnvironment {
         // Nothing to do here, the hook will handle setting the aliases
         Ok(())
     }
+
+    fn remove_symlinks(&self) -> Result<()> {
+        // Nothing to do here, the hook will handle setting the aliases
+        Ok(())
+    }
 }
