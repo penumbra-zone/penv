@@ -67,6 +67,14 @@ impl EnvironmentTrait for Environment {
         }
     }
 
+    fn remove_symlinks(&self) -> Result<()> {
+        match self {
+            // no symlinks are created for git checkout environments
+            Environment::CheckoutEnvironment(_env) => Ok(()),
+            Environment::BinaryEnvironment(env) => env.remove_symlinks(),
+        }
+    }
+
     fn satisfied_by_version(&self, version: &RepoOrVersion) -> bool {
         match self {
             Environment::CheckoutEnvironment(_) => false,
@@ -137,6 +145,8 @@ pub trait EnvironmentTrait: ManagedFile {
     }
 
     fn create_symlinks(&self, cache: &Cache) -> Result<()>;
+
+    fn remove_symlinks(&self) -> Result<()>;
 
     fn satisfied_by_version(&self, version: &RepoOrVersion) -> bool;
 

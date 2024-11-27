@@ -265,6 +265,16 @@ impl EnvironmentTrait for BinaryEnvironment {
         Ok(())
     }
 
+    fn remove_symlinks(&self) -> Result<()> {
+        fs::remove_file(&self.pcli_path())?;
+        fs::remove_file(&self.pclientd_path())?;
+        if !self.metadata().client_only {
+            fs::remove_file(&self.pd_path())?;
+        }
+
+        Ok(())
+    }
+
     fn satisfied_by_version(&self, version: &RepoOrVersion) -> bool {
         match (&self.version_requirement, version) {
             (VersionReqOrLatest::VersionReq(version_req), RepoOrVersion::Version(version)) => {
