@@ -171,6 +171,21 @@ $ pcli --version
 pcli 0.79.2
 ```
 
+## Upgrading environments
+
+When a new point release is made, you can update a specific environment by running:
+
+```
+penv install 0.79
+penv manage upgrade <environment>
+```
+
+There's not yet auto-install logic, so simply running `penv manage upgrade <environment>` will only symlink
+the binaries for the most recent release already installed locally. The `penv install <version>` command
+will fetch the latest release.
+
+The `upgrade` logic is not smart enough to handle running migrations e.g. for `pd`.
+
 ## Environment Variables
 
 `penv` sets various environment variables.
