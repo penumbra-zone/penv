@@ -32,6 +32,15 @@ tracing                          = { version = "0.1" }
 tracing-subscriber               = { version = "0.3.17", features = ["env-filter"] }
 url                              = { version = "2.2", features = ["serde"] }
 
+[features]
+default = []
+# Opt in to running network-integration tests via `cargo test --features network-integration`
+network-integration = []
+
+[dev-dependencies]
+assert_cmd = "2.0.16"
+predicates = "2.1"
+
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
