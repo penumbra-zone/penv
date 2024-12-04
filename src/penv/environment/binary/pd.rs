@@ -33,11 +33,12 @@ impl Binary for PdBinary {
         // NODE_URL
         let configs = configs.context("configs should be set")?;
         let generate_network = configs.get("generate_network").is_some();
-        let allocation_address = configs
-            .get("allocation_address")
-            .expect("allocation_address should be set");
 
         let pd_args = if generate_network {
+            // Allocation address is only relevant when generating a new network.
+            let allocation_address = configs
+                .get("allocation_address")
+                .expect("allocation_address should be set");
             vec![
                 "network".to_string(),
                 "--network-dir".to_string(),
@@ -68,8 +69,6 @@ impl Binary for PdBinary {
                     .context("external-address should be set")?
                     .to_string(),
                 self.pd_join_url.to_string(),
-                "--allocation-address".to_string(),
-                allocation_address.to_string(),
             ]
         };
         // Execute the pd binary with the given arguments
