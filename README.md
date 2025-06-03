@@ -1,25 +1,36 @@
-# penv, the Penumbra Environment Manager
+# penv
 
-## Description
+An environment manager for [Penumbra].
 
-Though a lot of care has been taken to ensure [Penumbra](https://penumbra.zone) is
-at the forefront of usability and developer experience, it is an unavoidable fact
-that running Penumbra requires synchronizing various versions of software dependencies.
+## Motivation
 
-For example, between Penumbra major releases, node operators will typically need to migrate
-their state data to be compatible with new features and bug fixes. APIs also may change
-between versions. For these reasons, using outdated versions of the Penumbra client software
-won't work against updated nodes.
+The `penv` tool is intended as a utility _for developers_ who work on multiple
+versions of the Penumbra protocol. For instance, [Penumbra Labs] runs a [testnet]
+to evaluate next-generation features that may or may not be adopted by mainnet.
+Sometimes there's protocol incompatibility between testnet and mainnet,
+so specific software versions must be used for each network. `penv` helps to organize those
+software version and chain associations.
 
-Additionally, node operators or developers may wish to test migration processes. `penv` makes this
-easier by allowing users to set up isolated Penumbra environments, associating a particular version
-of software with configuration and data necessary to run Penumbra.
+Additionally, developers may wish to configure multiple wallets per chain, or use multiple RPC
+endpoints for their `pcli` configuration. `penv` allows switching between these environments
+quickly and easily.
+
+Beyond managing client software such as `pcli` and `pclientd`, `penv` can also manage
+local [devnet]s with `pd` for use in complicated scenarios like migration testing.
+
+**If you just want to use `pcli` on the command-line, you should not use this tool.**
+Instead, consult the [project documentation for using `pcli`](https://guide.penumbra.zone/pcli).
 
 ## Installation
 
 `penv` works by setting up pre-command execution hooks in your shell to set the appropriate environment.
+First, make sure `penv` is on your path by building it locally:
 
-Each shell will require its own installation process.
+```
+cargo install --path .
+```
+
+Then, each shell will require its own installation process.
 
 ### zsh
 
@@ -37,7 +48,7 @@ Add the following line at the end of the `~/.bashrc` file:
 eval "$(penv hook bash)"
 ```
 
-## Demo
+## Usage
 
 After installing the hook in your shell, you can begin using `penv`.
 
@@ -46,11 +57,13 @@ After installing the hook in your shell, you can begin using `penv`.
 You can check which versions are available to install:
 
 ```console
-$ penv cache available 0.79
+$ penv cache available
 fetching available releases from https://api.github.com/repos/penumbra-zone/penumbra/releases
-0.79.2
-0.79.1
-0.79.0
+2.0.0-alpha.11
+1.5.2
+2.0.0-alpha.10
+1.5.1
+1.5.0
 ```
 
 This command takes a semver version requirement to filter available versions. Installed versions will
@@ -64,20 +77,20 @@ repository matching the version requirement will be installed to penv's installa
 cache.
 
 ```console
-$ penv install '0.79.0'
-installing ^0.79.0
+$ penv install 1.5.2
+installing ^1.5.2
 fetching available releases from https://api.github.com/repos/penumbra-zone/penumbra/releases
-downloading latest matching release: 0.79.2
-downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pcli-aarch64-apple-darwin.tar.gz.sha256
-downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pclientd-aarch64-apple-darwin.tar.gz.sha256
-downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pd-aarch64-apple-darwin.tar.gz.sha256
-downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pcli-aarch64-apple-darwin.tar.gz
-downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pclientd-aarch64-apple-darwin.tar.gz
-downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v0.79.2/pd-aarch64-apple-darwin.tar.gz
-  [00:00:05] [########################################] 97.97MiB/97.97MiB (0s)
-  [00:00:07] [########################################] 94.65MiB/94.65MiB (0s)
-  [00:00:08] [########################################] 117.86MiB/117.86MiB (0s)
-installing latest matching release: 0.79.2
+downloading latest matching release: 1.5.2
+downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pcli-x86_64-unknown-linux-gnu.tar.gz.sha256
+downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pclientd-x86_64-unknown-linux-gnu.tar.gz.sha256
+downloading shasum from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pd-x86_64-unknown-linux-gnu.tar.gz.sha256
+downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pcli-x86_64-unknown-linux-gnu.tar.gz
+downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pclientd-x86_64-unknown-linux-gnu.tar.gz
+downloading archive from https://github.com/penumbra-zone/penumbra/releases/download/v1.5.2/pd-x86_64-unknown-linux-gnu.tar.gz
+  [00:00:02] [########################################] 97.63MiB/97.63MiB (0s)
+  [00:00:00] [########################################] 12.07MiB/12.07MiB (0s)
+  [00:00:01] [########################################] 50.10MiB/50.10MiB (0s)
+installing latest matching release: 1.5.2
 ```
 
 ### Listing installed versions
@@ -86,7 +99,18 @@ You can verify which versions have been installed to the cache:
 
 ```console
 $ penv cache list
-0.79.2
+0.80.4
+0.80.5
+0.80.7
+0.80.9
+0.80.10
+0.80.11
+0.81.0
+1.5.0
+1.5.1
+1.5.2
+2.0.0-alpha.10
+2.0.0-alpha.11
 ```
 
 This command also takes an optional semver version requirement to filter installed versions.
@@ -247,6 +271,7 @@ drwxr-xr-x   4 user staff   128 Jul 25 16:21 environments
 -rw-r--r--   1 user staff  6671 Jul 25 16:26 penv.toml
 drwxr-xr-x   3 user staff    96 Jul 25 16:20 versions
 
+
 $ cat /Users/user/Library/Application\ Support/zone.penumbra.penv/environments/main_repo-devnet/bin/pcli
 
 exec cargo run --manifest-path="/Users/user/Library/Application Support/zone.penumbra.penv/environments/main_repo-devnet/checkout/Cargo.toml" --release --bin pcli -- "$@"
@@ -269,3 +294,9 @@ under the terms of both the [LICENSE-Apache-2.0](LICENSE-Apache-2.0) and the
 If you're using penv you are free to choose one of the provided licenses:
 
 `SPDX-License-Identifier: MIT OR Apache-2.0`
+
+[Penumbra]: https://penumbra.zone
+[Penumbra Labs]: https://penumbralabs.xyz
+[testnet]: https://guide.penumbra.zone/dev/testnet
+[devnet]: http://guide.penumbra.zone/dev/devnet-quickstart
+[pcli]: https://guide.penumbra.zone/pcli

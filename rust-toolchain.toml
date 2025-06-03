@@ -1,5 +1,5 @@
 [toolchain]
 # We set a specific version of rust so that CI workflows use the same
 # version development environments do.
-channel = "1.75"
+channel = "1.82"
 components = [ "rustfmt" ]
