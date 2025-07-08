@@ -78,8 +78,7 @@ impl Cache {
                 })
             }
             RepoOrVersionReq::Repo(_) => matching_versions.first(),
-        }
-        .map(|x| x);
+        };
 
         best_match.copied()
     }
@@ -106,7 +105,7 @@ impl Cache {
         match release {
             InstallableRelease::Binary(release) => {
                 let mut path = self.home.join("versions");
-                path.push(&release.version().to_string());
+                path.push(release.version().to_string());
 
                 path
             }
@@ -116,7 +115,7 @@ impl Cache {
                 let target_repo_dir =
                     // TODO: this will only allow a single checkout of a given repo url,
                     // there should maybe be a nonce or index or something to allow multiple checkouts
-                    hex::encode(Sha256::digest(&metadata.url.to_string().as_bytes()));
+                    hex::encode(Sha256::digest(metadata.url.to_string().as_bytes()));
                 path.push(target_repo_dir);
 
                 path
@@ -211,16 +210,13 @@ impl Cache {
             .clone();
 
         // Only retain the releases that match the version requirement
-        available_releases = available_releases
-            .into_iter()
-            .filter(|r| {
-                if let Some(required_version) = required_version {
-                    required_version.matches(&r.version, &latest_version)
-                } else {
-                    true
-                }
-            })
-            .collect();
+        available_releases.retain(|r| {
+            if let Some(required_version) = required_version {
+                required_version.matches(&r.version, &latest_version)
+            } else {
+                true
+            }
+        });
 
         // Mark each release as installed or not
         let return_releases = available_releases
@@ -295,8 +291,7 @@ mod tests {
                 }],
                 name: "Release 1.0.0".to_string(),
                 root_dir: Utf8PathBuf::from("/tmp/fake"),
-            })
-            .into()],
+            })],
         };
 
         // Serialize to TOML string

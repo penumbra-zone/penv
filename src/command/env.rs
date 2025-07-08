@@ -53,9 +53,7 @@ impl EnvCmd {
         match self.shell {
             Shell::Bash => self.print_bash(&context),
             Shell::Zsh => self.print_zsh(&context),
-            Shell::Unsupported => {
-                return Err(anyhow!("please provide a supported shell: `zsh` or `bash`"))
-            }
+            Shell::Unsupported => Err(anyhow!("please provide a supported shell: `zsh` or `bash`")),
         }
     }
 
@@ -69,7 +67,7 @@ impl EnvCmd {
 
     fn print_bash(&self, context: &tera::Context) -> Result<()> {
         let hook_template = include_str!("../../files/bash-env.j2");
-        let hook = tera::Tera::one_off(hook_template, &context, false)?;
+        let hook = tera::Tera::one_off(hook_template, context, false)?;
         println!("{}", hook);
 
         Ok(())

@@ -241,18 +241,16 @@ impl ManageCmd {
                         } else {
                             print!("{}", format!("{}Active: false\n\n", environment).red());
                         }
+                    } else if active_environment
+                        .clone()
+                        .is_some_and(|e| e.metadata().alias == environment.metadata().alias)
+                    {
+                        print!(
+                            "{}",
+                            format!("{} (active)\n\n", environment.metadata().alias).green()
+                        );
                     } else {
-                        if active_environment
-                            .clone()
-                            .is_some_and(|e| e.metadata().alias == environment.metadata().alias)
-                        {
-                            print!(
-                                "{}",
-                                format!("{} (active)\n\n", environment.metadata().alias).green()
-                            );
-                        } else {
-                            print!("{}", format!("{}\n\n", environment.metadata().alias).red());
-                        }
+                        print!("{}", format!("{}\n\n", environment.metadata().alias).red());
                     }
                 }
 
@@ -285,7 +283,7 @@ impl ManageCmd {
             } => {
                 let mut penv = Penv::new_from_repository(repository_name.clone(), home.clone())?;
 
-                let environment = penv.environments.get_environment(&environment_alias);
+                let environment = penv.environments.get_environment(environment_alias);
                 if environment.is_none() {
                     return Err(anyhow!(
                         "Environment with alias {} does not exist",

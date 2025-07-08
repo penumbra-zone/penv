@@ -208,6 +208,6 @@ impl Environments {
         self.environments
             .iter()
             .find(|e| e.metadata().alias == environment_alias)
-            .map(|e| e.clone())
+            .cloned()
     }
 }

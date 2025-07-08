@@ -145,8 +145,7 @@ impl<'de> Deserialize<'de> for BinaryEnvironment {
             }
         }
 
-        const FIELDS: &'static [&'static str] =
-            &["metadata", "version_requirement", "pinned_version"];
+        const FIELDS: &[&str] = &["metadata", "version_requirement", "pinned_version"];
         deserializer.deserialize_struct("BinaryEnvironment", FIELDS, BinaryEnvironmentVisitor)
     }
 }
@@ -228,7 +227,7 @@ impl EnvironmentTrait for BinaryEnvironment {
         let pinned_version = &self.pinned_version;
 
         create_symlink(
-            cache.get_pcli_for_version(&pinned_version).ok_or_else(|| {
+            cache.get_pcli_for_version(pinned_version).ok_or_else(|| {
                 anyhow::anyhow!(
                     "No installed pcli version found for version {}",
                     pinned_version
@@ -239,7 +238,7 @@ impl EnvironmentTrait for BinaryEnvironment {
         .context("error creating pcli symlink")?;
         create_symlink(
             cache
-                .get_pclientd_for_version(&pinned_version)
+                .get_pclientd_for_version(pinned_version)
                 .ok_or_else(|| {
                     anyhow::anyhow!(
                         "No installed pclientd version found for version {}",
@@ -251,7 +250,7 @@ impl EnvironmentTrait for BinaryEnvironment {
         .context("error creating pclientd symlink")?;
         if !self.metadata().client_only {
             create_symlink(
-                cache.get_pd_for_version(&pinned_version).ok_or_else(|| {
+                cache.get_pd_for_version(pinned_version).ok_or_else(|| {
                     anyhow::anyhow!(
                         "No installed pd version found for version {}",
                         pinned_version
@@ -266,10 +265,10 @@ impl EnvironmentTrait for BinaryEnvironment {
     }
 
     fn remove_symlinks(&self) -> Result<()> {
-        fs::remove_file(&self.pcli_path())?;
-        fs::remove_file(&self.pclientd_path())?;
+        fs::remove_file(self.pcli_path())?;
+        fs::remove_file(self.pclientd_path())?;
         if !self.metadata().client_only {
-            fs::remove_file(&self.pd_path())?;
+            fs::remove_file(self.pd_path())?;
         }
 
         Ok(())

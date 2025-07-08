@@ -32,7 +32,7 @@ impl Installable for RepoMetadata {
         // Clone the repository into the install path
         // TODO: is there any reason to do this instead of just cloning the release on-demand
         // into the environment's checkout dir? we copy it later eventually
-        clone_repo(&self.url, &install_path.to_string()).context("error cloning repository")?;
+        clone_repo(&self.url, install_path.as_ref()).context("error cloning repository")?;
 
         Ok(InstalledRelease::GitCheckout(CheckoutMetadata {
             name: self.name.clone(),
@@ -70,7 +70,7 @@ impl UsableRelease for CheckoutMetadata {
         let checkout_dir = &self.install_path;
         if checkout_dir.exists() {
             tracing::debug!("deleting checkout directory: {}", checkout_dir);
-            std::fs::remove_dir_all(&checkout_dir).context("error removing checkout directory")?;
+            std::fs::remove_dir_all(checkout_dir).context("error removing checkout directory")?;
         }
 
         Ok(())

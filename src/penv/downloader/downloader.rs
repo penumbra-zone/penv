@@ -229,15 +229,15 @@ impl Downloader {
                     // pclientd_shasum = Some(shasum);
                     continue;
                 }
-            } else if asset.browser_download_url.contains("pd-") {
-                if asset.browser_download_url.ends_with(".sha256") {
-                    shasum_urls.push(asset.browser_download_url.clone());
-                    // // download the shasum
-                    // let shasum_str = self.get_contents(&asset.browser_download_url).await?;
-                    // let shasum = hex::decode(&shasum_str[..64])?;
-                    // pd_shasum = Some(shasum);
-                    continue;
-                }
+            } else if asset.browser_download_url.contains("pd-")
+                && asset.browser_download_url.ends_with(".sha256")
+            {
+                shasum_urls.push(asset.browser_download_url.clone());
+                // // download the shasum
+                // let shasum_str = self.get_contents(&asset.browser_download_url).await?;
+                // let shasum = hex::decode(&shasum_str[..64])?;
+                // pd_shasum = Some(shasum);
+                continue;
             }
         }
 
@@ -374,33 +374,33 @@ impl Downloader {
 
                     continue;
                 }
-            } else if asset.browser_download_url.contains("pd-") {
-                if asset.browser_download_url.ends_with(".tar.gz") {
-                    let arc_self = arc_self.clone();
-                    let pd_shasum = pd_shasum.clone();
-                    let url = asset.browser_download_url.clone();
-                    let file_name = url
-                        .rsplit('/')
-                        .next()
-                        .ok_or_else(|| anyhow!("Failed to get file name from URL"))?
-                        .to_string();
-                    let temp_file_path =
-                        Utf8PathBuf::from_path_buf(self.temp_dir.path().join(&file_name))
-                            .map_err(|_| anyhow!("Failed to create temp file path"))?;
-                    let handle = tokio::spawn(async move {
-                        let (file_name, downloaded_files) = arc_self
-                            .download_file(url, temp_file_path.clone(), progress_bar, pd_shasum)
-                            .await
-                            .expect("failed to download archive");
+            } else if asset.browser_download_url.contains("pd-")
+                && asset.browser_download_url.ends_with(".tar.gz")
+            {
+                let arc_self = arc_self.clone();
+                let pd_shasum = pd_shasum.clone();
+                let url = asset.browser_download_url.clone();
+                let file_name = url
+                    .rsplit('/')
+                    .next()
+                    .ok_or_else(|| anyhow!("Failed to get file name from URL"))?
+                    .to_string();
+                let temp_file_path =
+                    Utf8PathBuf::from_path_buf(self.temp_dir.path().join(&file_name))
+                        .map_err(|_| anyhow!("Failed to create temp file path"))?;
+                let handle = tokio::spawn(async move {
+                    let (file_name, downloaded_files) = arc_self
+                        .download_file(url, temp_file_path.clone(), progress_bar, pd_shasum)
+                        .await
+                        .expect("failed to download archive");
 
-                        task::yield_now().await;
+                    task::yield_now().await;
 
-                        (file_name, downloaded_files)
-                    });
-                    handles.push(handle);
+                    (file_name, downloaded_files)
+                });
+                handles.push(handle);
 
-                    continue;
-                }
+                continue;
             }
         }
 

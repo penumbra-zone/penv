@@ -90,7 +90,7 @@ impl EnvironmentTrait for CheckoutEnvironment {
         let pcliwrapper = tera::Tera::one_off(pcliwrapper_template, &context, false)?;
         let pcli_binary = self.get_pcli_binary();
 
-        let mut pcli_file = File::create(&pcli_binary.path())?;
+        let mut pcli_file = File::create(pcli_binary.path())?;
 
         tracing::debug!(?pcliwrapper, "writing pcliwrapper");
         // Write the rendered pcli wrapper to the pcli binary location
@@ -98,26 +98,26 @@ impl EnvironmentTrait for CheckoutEnvironment {
 
         #[cfg(target_family = "unix")]
         {
-            let pcli_metadata = fs::metadata(&pcli_binary.path())?;
+            let pcli_metadata = fs::metadata(pcli_binary.path())?;
             let mut pcli_permissions = pcli_metadata.permissions();
             pcli_permissions.set_mode(pcli_permissions.mode() | 0o111); // Add executable bit
-            fs::set_permissions(&pcli_binary.path(), pcli_permissions)?;
+            fs::set_permissions(pcli_binary.path(), pcli_permissions)?;
         }
 
         let pclientdwrapper_template = include_str!("../../../../../files/zsh-pclientdwrapper.j2");
         let pclientdwrapper = tera::Tera::one_off(pclientdwrapper_template, &context, false)?;
         let pclientd_binary = self.get_pclientd_binary();
 
-        let mut pclientd_file = File::create(&pclientd_binary.path())?;
+        let mut pclientd_file = File::create(pclientd_binary.path())?;
 
         pclientd_file.write_all(pclientdwrapper.as_bytes())?;
 
         #[cfg(target_family = "unix")]
         {
-            let pclientd_metadata = fs::metadata(&pclientd_binary.path())?;
+            let pclientd_metadata = fs::metadata(pclientd_binary.path())?;
             let mut pclientd_permissions = pclientd_metadata.permissions();
             pclientd_permissions.set_mode(pclientd_permissions.mode() | 0o111); // Add executable bit
-            fs::set_permissions(&pclientd_binary.path(), pclientd_permissions)?;
+            fs::set_permissions(pclientd_binary.path(), pclientd_permissions)?;
         }
 
         if !self.metadata().client_only {
@@ -127,16 +127,16 @@ impl EnvironmentTrait for CheckoutEnvironment {
             let pdwrapper = tera::Tera::one_off(pdwrapper_template, &context, false)?;
             let pd_binary = self.get_pd_binary();
 
-            let mut pd_file = File::create(&pd_binary.path())?;
+            let mut pd_file = File::create(pd_binary.path())?;
 
             pd_file.write_all(pdwrapper.as_bytes())?;
 
             #[cfg(target_family = "unix")]
             {
-                let pd_metadata = fs::metadata(&pd_binary.path())?;
+                let pd_metadata = fs::metadata(pd_binary.path())?;
                 let mut pd_permissions = pd_metadata.permissions();
                 pd_permissions.set_mode(pd_permissions.mode() | 0o111); // Add executable bit
-                fs::set_permissions(&pd_binary.path(), pd_permissions)?;
+                fs::set_permissions(pd_binary.path(), pd_permissions)?;
             }
         }
 

@@ -180,7 +180,7 @@ impl<'de> Deserialize<'de> for Penv {
                     environments
                         .iter()
                         .find(|e| e.metadata().alias == alias)
-                        .map(|e| e.clone())
+                        .cloned()
                 });
                 let cache = Cache {
                     home: home_dir.clone(),
@@ -198,7 +198,7 @@ impl<'de> Deserialize<'de> for Penv {
             }
         }
 
-        const FIELDS: &'static [&'static str] = &[
+        const FIELDS: &[&str] = &[
             "repository_name",
             "home_dir",
             "environments",
@@ -306,7 +306,7 @@ impl Penv {
         let env_path = &environment.metadata().root_dir;
         if env_path.exists() {
             tracing::debug!("removing environment directory: {}", env_path);
-            std::fs::remove_dir_all(&env_path)?;
+            std::fs::remove_dir_all(env_path)?;
         }
 
         // Remove the environment from the app
@@ -479,7 +479,7 @@ impl Penv {
 
                 tracing::debug!("initializing environment");
                 // Copy the checkout into the environment dir.
-                environment.initialize(&cache)?;
+                environment.initialize(cache)?;
 
                 tracing::debug!("created environment: {:?}", environment);
 
@@ -520,7 +520,7 @@ impl Penv {
                 }));
 
                 tracing::debug!("initializing environment");
-                environment.initialize(&cache)?;
+                environment.initialize(cache)?;
 
                 tracing::debug!("created environment: {:?}", environment);
 
@@ -574,7 +574,7 @@ impl Penv {
                     let target_repo_dir =
                     // TODO: this will only allow a single checkout of a given repo url,
                     // there should maybe be a nonce or index or something to allow multiple checkouts
-                    hex::encode(Sha256::digest(&repo_url.to_string().as_bytes()));
+                    hex::encode(Sha256::digest(repo_url.to_string().as_bytes()));
                     path.push(target_repo_dir.clone());
                     Ok(InstallableRelease::GitRepo(RepoMetadata {
                         // TODO: a different name?
@@ -784,54 +784,36 @@ impl Penv {
     }
 
     pub fn pcli_home(&self) -> Option<Utf8PathBuf> {
-        if let Some(environment) = &self.active_environment {
-            // TODO: move to Environment trait
-            Some(environment.path().join("pcli"))
-        } else {
-            None
-        }
+        self.active_environment
+            .as_ref()
+            .map(|environment| environment.path().join("pcli"))
     }
 
     pub fn pclientd_home(&self) -> Option<Utf8PathBuf> {
-        if let Some(environment) = &self.active_environment {
-            Some(environment.path().join("pclientd"))
-        } else {
-            None
-        }
+        self.active_environment
+            .as_ref()
+            .map(|environment| environment.path().join("pclientd"))
     }
 
     pub fn pd_home(&self) -> Option<Utf8PathBuf> {
-        if let Some(environment) = &self.active_environment {
-            // TODO: this isn't quite right if you want an environment with more
-            // than one node configured
-            // TODO: should live in environment trait
-            Some(
-                environment
-                    .path()
-                    .join("network_data")
-                    .join("node0")
-                    .join("pd"),
-            )
-        } else {
-            None
-        }
+        self.active_environment.as_ref().map(|environment| {
+            environment
+                .path()
+                .join("network_data")
+                .join("node0")
+                .join("pd")
+        })
     }
 
     // TODO: move to Environment trait
     pub fn cometbft_home(&self) -> Option<Utf8PathBuf> {
-        if let Some(environment) = &self.active_environment {
-            // TODO: this isn't quite right if you want an environment with more
-            // than one node configured
-            Some(
-                environment
-                    .path()
-                    .join("network_data")
-                    .join("node0")
-                    .join("cometbft"),
-            )
-        } else {
-            None
-        }
+        self.active_environment.as_ref().map(|environment| {
+            environment
+                .path()
+                .join("network_data")
+                .join("node0")
+                .join("cometbft")
+        })
     }
 }
 
@@ -860,8 +842,7 @@ mod tests {
                     name: "test".into(),
                     url: "http://localhost:50051".into(),
                     install_path: "/tmp/test".into(),
-                })
-                .into(),
+                }),
                 InstalledRelease::Binary(InstalledBinaryRelease {
                     version: Version::parse("1.0.0").unwrap(),
                     body: Some("Release notes for version 1.0.0".to_string()),
@@ -871,8 +852,7 @@ mod tests {
                     }],
                     name: "Release 1.0.0".to_string(),
                     root_dir: Utf8PathBuf::from("/tmp/fake"),
-                })
-                .into(),
+                }),
             ],
         };
         let penv = Penv {

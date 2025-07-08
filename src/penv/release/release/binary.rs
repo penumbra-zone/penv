@@ -167,7 +167,7 @@ impl<'de> Deserialize<'de> for InstalledBinaryRelease {
             }
         }
 
-        const FIELDS: &'static [&'static str] = &["version", "body", "assets", "name", "root_dir"];
+        const FIELDS: &[&str] = &["version", "body", "assets", "name", "root_dir"];
         deserializer.deserialize_struct(
             "InstalledBinaryRelease",
             FIELDS,
@@ -267,7 +267,7 @@ impl UsableRelease for InstalledBinaryRelease {
         let installed_version_dir = &self.root_dir;
         if installed_version_dir.exists() {
             tracing::debug!("deleting version directory: {}", installed_version_dir);
-            std::fs::remove_dir_all(&installed_version_dir)
+            std::fs::remove_dir_all(installed_version_dir)
                 .context("error removing version directory")?;
         }
 

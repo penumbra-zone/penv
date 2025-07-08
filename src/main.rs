@@ -24,7 +24,6 @@ async fn main() -> Result<()> {
         Command::Cache(cache_cmd) => cache_cmd.exec(opt.home).await?,
         Command::Manage(manage_cmd) => {
             manage_cmd.exec(opt.home).await?;
-            ()
         }
         Command::Use(use_cmd) => use_cmd.exec(opt.home).await?,
         Command::Hook(hook_cmd) => hook_cmd.exec(opt.home).await?,

@@ -46,7 +46,7 @@ impl FromStr for RepoOrVersionReq {
         }
 
         // ...otherwise, treat as a repository path on disk or URL
-        return Ok(Self::Repo(s.to_string()));
+        Ok(Self::Repo(s.to_string()))
     }
 }
 

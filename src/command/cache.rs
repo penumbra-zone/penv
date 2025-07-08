@@ -85,7 +85,7 @@ impl CacheCmd {
                         penv.cache.persist()?;
                         Ok(())
                     }
-                    None => return Err(anyhow!("Version {} is not installed", version)),
+                    None => Err(anyhow!("Version {} is not installed", version)),
                 }
             }
             CacheCmd {
