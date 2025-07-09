@@ -1,6 +1,6 @@
 [package]
 name = "penv"
-version = "0.1.0"
+version = "0.1.1"
 repository = "https://github.com/penumbra-zone/penv"
 edition = "2021"
 
