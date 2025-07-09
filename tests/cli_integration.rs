@@ -5,6 +5,7 @@
 use assert_cmd::Command;
 use tempfile::tempdir;
 
+/// The version of the CLI programs to fetch from github.
 const PENUMBRA_VERSION: &str = "0.80";
 
 /// For better or worse, the `penv manage create <foo>` command fails, unless
