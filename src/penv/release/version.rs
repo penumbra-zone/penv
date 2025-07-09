@@ -36,10 +36,7 @@ impl FromStr for RepoOrVersionReq {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Attempt to parse as a VersionReqOrLatest...
-        let version_or_latest = match VersionReqOrLatest::from_str(s) {
-            Ok(version_or_latest) => Some(version_or_latest),
-            Err(_) => None,
-        };
+        let version_or_latest = VersionReqOrLatest::from_str(s).ok();
 
         if let Some(version_or_latest) = version_or_latest {
             return Ok(Self::VersionReqOrLatest(version_or_latest));
@@ -75,10 +72,7 @@ impl FromStr for RepoOrVersion {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Attempt to parse as a Version...
-        let version = match Version::from_str(s) {
-            Ok(version) => Some(version),
-            Err(_) => None,
-        };
+        let version = Version::from_str(s).ok();
 
         match version {
             Some(version) => Ok(Self::Version(version)),
