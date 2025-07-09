@@ -5,8 +5,8 @@ check:
 
 # Run unit tests
 test:
-  cargo test
+  cargo nextest run
 
 # Run network integration tests
-integration-test:
-  cargo test --features network-integration
+integration:
+  cargo nextest run --features network-integration
