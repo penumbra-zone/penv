@@ -6,7 +6,7 @@ use assert_cmd::Command;
 use tempfile::tempdir;
 
 /// The version of the CLI programs to fetch from github.
-const PENUMBRA_VERSION: &str = "0.80";
+const PENUMBRA_VERSION: &str = "2";
 
 /// For better or worse, the `penv manage create <foo>` command fails, unless
 /// `penv manage install <version>` was run first. When we add auto-installation
