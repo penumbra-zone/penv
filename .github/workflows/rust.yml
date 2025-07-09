@@ -46,7 +46,7 @@ jobs:
           fi
 
       - name: Run tests with nextest
-        run: cargo nextest run --release
+        run: cargo nextest run --release --all-features
         env:
           CARGO_TERM_COLOR: always
 
