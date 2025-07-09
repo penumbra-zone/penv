@@ -63,6 +63,14 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 
 impl EnvironmentTrait for CheckoutEnvironment {
     fn initialize(&self, _cache: &Cache) -> Result<()> {
+        self.initialize_with_seed_phrase(_cache, None)
+    }
+
+    fn initialize_with_seed_phrase(
+        &self,
+        _cache: &Cache,
+        import_seed_phrase: Option<String>,
+    ) -> Result<()> {
         // Create the directory structure for the environment
         let bin_dir = self.path().join("bin");
         let checkout_dir = self.path().join("checkout");
@@ -143,7 +151,11 @@ impl EnvironmentTrait for CheckoutEnvironment {
         // If the environment is set to generate a local dev network,
         // we must initialize that prior to pcli and pclientd.
         // Initialize pcli configuration
-        let seed_phrase = pcli_binary.initialize(None)?;
+        let mut pcli_configs = HashMap::new();
+        if let Some(seed_phrase) = import_seed_phrase.clone() {
+            pcli_configs.insert("import_seed_phrase".to_string(), seed_phrase);
+        }
+        let seed_phrase = pcli_binary.initialize(Some(pcli_configs))?;
         // TODO: lol don't do this
         tracing::debug!("seed phrase: {}", seed_phrase);
         let pclientd_binary = self.get_pclientd_binary();

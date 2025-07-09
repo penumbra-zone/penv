@@ -177,6 +177,14 @@ impl EnvironmentTrait for BinaryEnvironment {
     /// pd/pclientd/pcli configurations and symlinks to the
     /// pinned version of the software stack.
     fn initialize(&self, cache: &Cache) -> Result<()> {
+        self.initialize_with_seed_phrase(cache, None)
+    }
+
+    fn initialize_with_seed_phrase(
+        &self,
+        cache: &Cache,
+        import_seed_phrase: Option<String>,
+    ) -> Result<()> {
         // Create the directory structure for the environment
         let bin_dir = self.path().join("bin");
         tracing::debug!("creating bin_dir at {}", bin_dir);
@@ -193,7 +201,11 @@ impl EnvironmentTrait for BinaryEnvironment {
         // we must initialize that prior to pcli and pclientd.
         // Initialize pcli configuration
         let pcli_binary = self.get_pcli_binary();
-        let seed_phrase = pcli_binary.initialize(None)?;
+        let mut pcli_configs = HashMap::new();
+        if let Some(seed_phrase) = import_seed_phrase.clone() {
+            pcli_configs.insert("import_seed_phrase".to_string(), seed_phrase);
+        }
+        let seed_phrase = pcli_binary.initialize(Some(pcli_configs))?;
         // TODO: lol don't do this
         tracing::debug!("seed phrase: {}", seed_phrase);
         let pclientd_binary = self.get_pclientd_binary();
