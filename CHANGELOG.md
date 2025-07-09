@@ -2,6 +2,13 @@
 
 Nothing Yet!
 
+# Version 0.2.0 (2025-07-09)
+
+* feat: support importing seed phrase (#40)
+* lint: cargo clippy (#39)
+* chore: cargo update (#38)
+* fix(tests): update default penumbra version (#37) 
+
 # Version 0.1.1 (2025-07-09)
 
 * fix: pclientd custody args
