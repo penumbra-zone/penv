@@ -4,8 +4,8 @@ check:
   RUSTFLAGS="-D warnings" cargo check --all-targets --all-features --target-dir=target/check
   # fmt dry-run, failing on any suggestions
   cargo fmt --all -- --check
-  # cargo clippy
   # clippy doesn't pass yet
+  # cargo clippy
 
 # Run unit tests
 test:
