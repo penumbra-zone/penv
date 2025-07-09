@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 use clap::value_parser;
 use colored::Colorize;
+use std::io::{self, IsTerminal};
 use url::Url;
 
 use crate::penv::{
@@ -9,6 +10,27 @@ use crate::penv::{
     release::{InstalledRelease, RepoOrVersionReq},
     Penv,
 };
+
+/// Safely prompt for seed phrase secret interactively.
+fn get_seed_phrase() -> Result<String> {
+    if io::stdin().is_terminal() {
+        // Interactive mode: prompt for seed phrase securely
+        let seed_phrase = rpassword::prompt_password("Enter seed phrase: ")?;
+        if seed_phrase.trim().is_empty() {
+            return Err(anyhow!("Seed phrase cannot be empty"));
+        }
+        Ok(seed_phrase.trim().to_string())
+    } else {
+        // Non-interactive mode: read from stdin
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let seed_phrase = input.trim();
+        if seed_phrase.is_empty() {
+            return Err(anyhow!("Seed phrase cannot be empty"));
+        }
+        Ok(seed_phrase.to_string())
+    }
+}
 
 #[derive(Debug, clap::Parser)]
 pub struct ManageCmd {
@@ -87,6 +109,12 @@ pub struct CreateCmd {
     /// Not used if `client_only` is set.
     #[clap(long)]
     generate_network: bool,
+    /// Import an existing seed phrase instead of generating a new one.
+    ///
+    /// When provided, pcli will run `init soft-kms import-phrase` instead of `soft-kms generate`.
+    /// The seed phrase will be prompted for securely or read from stdin.
+    #[clap(long)]
+    import_seed_phrase: bool,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -159,6 +187,7 @@ impl ManageCmd {
                         repository_name,
                         client_only,
                         generate_network,
+                        import_seed_phrase,
                     }),
             } => {
                 let pd_join_url = match pd_join_url {
@@ -173,6 +202,13 @@ impl ManageCmd {
 
                 let mut penv = Penv::new_from_repository(repository_name.clone(), home.clone())?;
 
+                // Handle seed phrase input if import_seed_phrase is true
+                let seed_phrase = if *import_seed_phrase {
+                    Some(get_seed_phrase()?)
+                } else {
+                    None
+                };
+
                 let env = penv.create_environment(
                     environment_alias.clone(),
                     penumbra_version.clone(),
@@ -181,6 +217,7 @@ impl ManageCmd {
                     repository_name.clone(),
                     client_only.clone(),
                     generate_network.clone(),
+                    seed_phrase,
                 )?;
 
                 match *env {

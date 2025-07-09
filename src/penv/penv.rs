@@ -431,6 +431,7 @@ impl Penv {
         _repository_name: String,
         client_only: bool,
         generate_network: bool,
+        import_seed_phrase: Option<String>,
     ) -> Result<Arc<Environment>> {
         if self
             .environments
@@ -479,7 +480,7 @@ impl Penv {
 
                 tracing::debug!("initializing environment");
                 // Copy the checkout into the environment dir.
-                environment.initialize(cache)?;
+                environment.initialize_with_seed_phrase(cache, import_seed_phrase.clone())?;
 
                 tracing::debug!("created environment: {:?}", environment);
 
@@ -520,7 +521,7 @@ impl Penv {
                 }));
 
                 tracing::debug!("initializing environment");
-                environment.initialize(cache)?;
+                environment.initialize_with_seed_phrase(cache, import_seed_phrase.clone())?;
 
                 tracing::debug!("created environment: {:?}", environment);
 

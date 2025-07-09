@@ -59,6 +59,21 @@ impl EnvironmentTrait for Environment {
         }
     }
 
+    fn initialize_with_seed_phrase(
+        &self,
+        cache: &Cache,
+        import_seed_phrase: Option<String>,
+    ) -> Result<()> {
+        match self {
+            Environment::CheckoutEnvironment(env) => {
+                env.initialize_with_seed_phrase(cache, import_seed_phrase)
+            }
+            Environment::BinaryEnvironment(env) => {
+                env.initialize_with_seed_phrase(cache, import_seed_phrase)
+            }
+        }
+    }
+
     fn create_symlinks(&self, cache: &Cache) -> Result<()> {
         match self {
             // no symlinks are created for git checkout environments
@@ -110,6 +125,13 @@ pub trait EnvironmentTrait: ManagedFile {
     /// pd/pclientd/pcli configurations and symlinks to the
     /// pinned version of the software stack.
     fn initialize(&self, cache: &Cache) -> Result<()>;
+
+    /// Initializes an environment with an optional seed phrase for import.
+    fn initialize_with_seed_phrase(
+        &self,
+        cache: &Cache,
+        import_seed_phrase: Option<String>,
+    ) -> Result<()>;
 
     fn get_pcli_binary(&self) -> PcliBinary {
         PcliBinary {
