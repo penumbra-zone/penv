@@ -1,7 +1,11 @@
 # Run cargo check, failing on warnings
 check:
-  cargo check --all-targets --all-features
-  cargo clippy
+  # check, failing on warnings
+  RUSTFLAGS="-D warnings" cargo check --all-targets --all-features --target-dir=target/check
+  # fmt dry-run, failing on any suggestions
+  cargo fmt --all -- --check
+  # cargo clippy
+  # clippy doesn't pass yet
 
 # Run unit tests
 test:

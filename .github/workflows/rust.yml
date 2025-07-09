@@ -12,24 +12,22 @@ jobs:
     runs-on: buildjet-16vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@v30
+
+      - name: Setup Nix Cache
+        uses: nix-community/cache-nix-action@v6
         with:
-          lfs: true
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          backend: buildjet
 
-      # The `rust-toolchain.toml` file dictates which version of rust to setup.
-      - name: check rust version
-        run: rustc --version
-
-      - name: Install nextest
-        uses: taiki-e/install-action@nextest
-
-      - name: Load rust cache
-        uses: astriaorg/buildjet-rust-cache@v2.5.1
+      - name: Pre-build development shell
+        run: nix develop --command echo "devshell built and cached"
 
       - name: Run cargo check, failing on warnings
-        run: cargo check --release --all-targets
-        env:
-          # The `-D warnings` option causes an error on warnings.
-          RUSTFLAGS: "-D warnings"
+        run: nix develop --command just check
 
       # If a dependency was modified, Cargo.lock may flap if not committed.
       - name: Check for diffs
@@ -46,19 +44,6 @@ jobs:
           fi
 
       - name: Run tests with nextest
-        run: cargo nextest run --release --all-features
+        run: nix develop --command just integration
         env:
           CARGO_TERM_COLOR: always
-
-  fmt:
-    name: fmt
-    runs-on: buildjet-8vcpu-ubuntu-2204
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # we don't need lfs for the check to pass, but we do need it for the paths-ignore
-          # option to work correctly.
-          lfs: true
-      - name: Load rust cache
-        uses: astriaorg/buildjet-rust-cache@v2.5.1
-      - run: cargo fmt --all -- --check
