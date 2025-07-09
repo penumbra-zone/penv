@@ -6,6 +6,7 @@ Nothing Yet!
 
 * fix: pclientd custody args
 * lint: cargo clippy
+* dev: nix flake devshell
 
 # Version 0.1.0 (2025-06-03)
 
