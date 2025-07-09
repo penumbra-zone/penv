@@ -248,7 +248,7 @@ impl Downloader {
         for shasum_url in shasum_urls {
             let progress_bar = multi_progress.add(ProgressBar::new(0));
             progress_bar.set_style(ProgressStyle::default_bar()
-                .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+                .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
                 .progress_chars("#>-"));
 
             // Create a temporary file for the downloaded archive
@@ -281,9 +281,7 @@ impl Downloader {
         }
 
         // Drive the multi-progress bar in a separate task
-        let mp_thread = std::thread::spawn(move || {
-            multi_progress.join().unwrap();
-        });
+        let mp_thread = std::thread::spawn(move || multi_progress);
 
         // Await the shasums and set them
         for handle in handles {
@@ -300,7 +298,9 @@ impl Downloader {
             }
         }
 
-        mp_thread.join().unwrap();
+        mp_thread
+            .join()
+            .expect("failed to join the multiprogress bar thread");
 
         // Then download archives
         let multi_progress = MultiProgress::new();
@@ -312,7 +312,7 @@ impl Downloader {
 
             let progress_bar = multi_progress.add(ProgressBar::new(0));
             progress_bar.set_style(ProgressStyle::default_bar()
-                .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+                .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
                 .progress_chars("#>-"));
 
             if asset.browser_download_url.contains("pcli-") {
@@ -405,9 +405,7 @@ impl Downloader {
         }
 
         // Drive the multi-progress bar in a separate task
-        let mp_thread = std::thread::spawn(move || {
-            multi_progress.join().unwrap();
-        });
+        let mp_thread = std::thread::spawn(move || multi_progress);
 
         for handle in handles {
             let (file_name, file_path) = handle.await?;
