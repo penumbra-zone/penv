@@ -2,12 +2,13 @@ use anyhow::{anyhow, Result};
 use camino::Utf8PathBuf;
 use clap::value_parser;
 use colored::Colorize;
+use semver::Version;
 use std::io::{self, IsTerminal};
 use url::Url;
 
 use crate::penv::{
     environment::{Environment, EnvironmentTrait as _, ManagedFile as _},
-    release::{InstalledRelease, RepoOrVersionReq},
+    release::{InstalledRelease, RepoOrVersion, RepoOrVersionReq},
     Penv,
 };
 
@@ -52,6 +53,9 @@ pub enum ManageTopSubCmd {
     // Migrate will handle applying migrations between state-breaking versions
     // #[clap(flatten)]
     // Migrate(MigrateSubCmd),
+    /// Set a Penumbra environment to use an exact software version.
+    #[clap(display_order = 350)]
+    Set(SetCmd),
     /// Upgrade a Penumbra environment to use the latest software version matching its semver version requirement.
     #[clap(display_order = 400)]
     Upgrade(UpgradeCmd),
@@ -140,6 +144,16 @@ pub struct RenameCmd {
     /// The new alias to rename the Penumbra environment.
     #[clap(display_order = 200)]
     new_alias: String,
+}
+
+#[derive(Debug, Clone, clap::Parser)]
+pub struct SetCmd {
+    /// The alias of the Penumbra environment to update.
+    #[clap(display_order = 100)]
+    environment_alias: String,
+    /// The exact version to set for the environment (e.g. "2.0.6").
+    #[clap(display_order = 200)]
+    version: String,
 }
 
 #[derive(Debug, Clone, clap::Parser)]
@@ -308,6 +322,56 @@ impl ManageCmd {
                     leave_client_state.clone(),
                     leave_node_state.clone(),
                 )?;
+
+                Ok(())
+            }
+            ManageCmd {
+                subcmd:
+                    ManageTopSubCmd::Set(SetCmd {
+                        environment_alias,
+                        version,
+                    }),
+            } => {
+                let version = Version::parse(version)
+                    .map_err(|e| anyhow!("Invalid version '{}': {}", version, e))?;
+
+                let mut penv = Penv::new(home.clone())?;
+
+                let environment = penv
+                    .environments
+                    .get_environment(environment_alias)
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "Environment with alias {} does not exist",
+                            environment_alias
+                        )
+                    })?;
+
+                match *environment {
+                    Environment::BinaryEnvironment(ref _env) => {}
+                    Environment::CheckoutEnvironment(_) => {
+                        return Err(anyhow!("Cannot set version for a checkout environment"));
+                    }
+                }
+
+                // Verify the version is installed in the cache
+                if penv
+                    .cache
+                    .get_installed_release(&RepoOrVersion::Version(version.clone()))
+                    .is_none()
+                {
+                    return Err(anyhow!(
+                        "Version {} is not installed; run `penv install {}` first",
+                        version,
+                        version
+                    ));
+                }
+
+                println!(
+                    "Setting environment {} to version {}",
+                    environment_alias, version
+                );
+                penv.replace_version(environment_alias.clone(), version)?;
 
                 Ok(())
             }
