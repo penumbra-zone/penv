@@ -2,6 +2,10 @@
 
 Nothing Yet!
 
+# Version 0.2.1 (2026-02-07)
+
+* feat: add "manage set" subcmd (#41)
+
 # Version 0.2.0 (2025-07-09)
 
 * feat: support importing seed phrase (#40)
